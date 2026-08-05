@@ -1,0 +1,21 @@
+# Maven build output
+target/
+
+# maven-release-plugin leftovers
+release.properties
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+
+# The wrapper scripts and .mvn/wrapper/maven-wrapper.properties ARE committed.
+# distributionType=only-script means no jar should ever appear here.
+.mvn/wrapper/maven-wrapper.jar
+
+# IntelliJ. .idea/ itself is shared: checkstyle-idea.xml and
+# palantir-java-format.xml belong in the repository, and IntelliJ maintains
+# .idea/.gitignore for the volatile files inside it.
+*.iml
+out/
+
+# macOS
+.DS_Store

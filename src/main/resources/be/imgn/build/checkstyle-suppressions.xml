@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+
+  <!-- Generated sources are nobody's style problem. Deliberately NOT a blanket
+       [\\/]target[\\/] rule: that matches any path with a "target" component,
+       so a project checked out under one would silently lose every check. -->
+  <suppress files="[\\/]generated-sources[\\/]" checks=".*"/>
+  <suppress files="[\\/]generated-test-sources[\\/]" checks=".*"/>
+
+  <!-- Tests: long descriptive method names, fixtures, and magic values are fine. -->
+  <suppress files="[\\/]src[\\/]test[\\/]" checks="MagicNumber|JavadocMethod|JavadocType|MethodLength|MethodName"/>
+
+  <!-- module-info and package-info carry declarations, not logic. -->
+  <suppress files="module-info\.java" checks="JavadocType|LineLength"/>
+  <suppress files="package-info\.java" checks="JavadocType"/>
+
+</suppressions>

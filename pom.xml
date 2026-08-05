@@ -1,0 +1,793 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- child.project.url.inherit.append.path: otherwise Maven appends each child's
+     artifactId to the inherited <url>, which is never what you want here. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+         child.project.url.inherit.append.path="false">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>be.imgn.parent</groupId>
+  <artifactId>parent</artifactId>
+  <version>2026-08</version>
+  <packaging>pom</packaging>
+
+  <name>Parent</name>
+  <description>Shared build configuration for all projects.</description>
+  <url>https://github.com/imgn-dev/imgn-parent</url>
+  <inceptionYear>2026</inceptionYear>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <!-- Reproducible builds: bump on each release (or let maven-release-plugin do it). -->
+    <project.build.outputTimestamp>2026-08-01T00:00:00Z</project.build.outputTimestamp>
+
+    <java.release>25</java.release>
+    <minimum.maven.version>3.9.16</minimum.maven.version>
+
+    <!-- Base package NullAway enforces null-safety on; override in a child that
+         lives elsewhere. -->
+    <nullaway.annotated.packages>be.imgn</nullaway.annotated.packages>
+
+    <!-- Printing to stdout/stderr is a bug everywhere except in a command-line
+         tool, where it is the whole point. Such a module sets this to OFF; a
+         single main method can instead use @SuppressWarnings("SystemOut"). -->
+    <errorprone.systemout.severity>ERROR</errorprone.systemout.severity>
+
+    <!-- Version of this POM's own "config" jar, which carries the Checkstyle
+         ruleset. It must equal <version> above, and ${project.version}
+         cannot be used: in an inherited plugin dependency that expression resolves
+         against the *child*, which would make every child look for a config jar
+         under its own version. Bump on release; the enforcer rule below fails the
+         build here if the two drift apart. -->
+    <imgn.config.version>2026-08</imgn.config.version>
+
+    <!-- Dependency versions -->
+    <junit.version>6.1.2</junit.version>
+    <assertj.version>3.27.7</assertj.version>
+    <archunit.version>1.5.0</archunit.version>
+    <jqwik.version>1.10.1</jqwik.version>
+    <jspecify.version>1.0.1</jspecify.version>
+
+    <!-- Tool versions -->
+    <checkstyle.version>13.9.0</checkstyle.version>
+    <errorprone.version>2.50.0</errorprone.version>
+    <nullaway.version>0.13.8</nullaway.version>
+    <palantir-java-format.version>2.96.0</palantir-java-format.version>
+
+    <!-- Plugin versions -->
+    <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
+    <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
+    <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+    <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
+    <maven-failsafe-plugin.version>3.5.6</maven-failsafe-plugin.version>
+    <maven-jar-plugin.version>3.5.1</maven-jar-plugin.version>
+    <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
+    <maven-deploy-plugin.version>3.1.4</maven-deploy-plugin.version>
+    <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
+    <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
+    <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
+    <maven-enforcer-plugin.version>3.6.3</maven-enforcer-plugin.version>
+    <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
+    <maven-site-plugin.version>3.22.0</maven-site-plugin.version>
+    <maven-release-plugin.version>3.3.1</maven-release-plugin.version>
+    <maven-dependency-plugin.version>3.11.0</maven-dependency-plugin.version>
+    <maven-wrapper-plugin.version>3.3.4</maven-wrapper-plugin.version>
+    <maven-invoker-plugin.version>3.10.1</maven-invoker-plugin.version>
+    <versions-maven-plugin.version>2.21.0</versions-maven-plugin.version>
+    <pitest-maven.version>1.25.9</pitest-maven.version>
+    <pitest-junit5-plugin.version>1.2.3</pitest-junit5-plugin.version>
+    <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
+    <spotless-maven-plugin.version>3.9.0</spotless-maven-plugin.version>
+  </properties>
+
+  <licenses>
+    <license>
+      <name>The Apache License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>imgn-dev</id>
+      <name>The IMGN developers</name>
+      <url>https://github.com/imgn-dev</url>
+    </developer>
+  </developers>
+
+  <scm child.scm.connection.inherit.append.path="false"
+       child.scm.developerConnection.inherit.append.path="false"
+       child.scm.url.inherit.append.path="false">
+    <connection>scm:git:https://github.com/imgn-dev/imgn-parent.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/imgn-dev/imgn-parent.git</developerConnection>
+    <url>https://github.com/imgn-dev/imgn-parent</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${junit.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.assertj</groupId>
+        <artifactId>assertj-bom</artifactId>
+        <version>${assertj.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.tngtech.archunit</groupId>
+        <artifactId>archunit-junit6</artifactId>
+        <version>${archunit.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>net.jqwik</groupId>
+        <artifactId>jqwik</artifactId>
+        <version>${jqwik.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jspecify</groupId>
+        <artifactId>jspecify</artifactId>
+        <version>${jspecify.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+
+    <!-- inherited=false: these two build THIS POM's "config" jar from
+         src/main/resources. Children must not try to build one of their own. -->
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <inherited>false</inherited>
+        <executions>
+          <execution>
+            <id>config-resources</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>resources</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <inherited>false</inherited>
+        <executions>
+          <execution>
+            <id>config-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <classifier>config</classifier>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Active in every module of every descendant project. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <!-- inherited=false: guards the one hazard of carrying our own config
+               jar. If imgn.config.version is not bumped with the project
+               version, every child silently resolves the previous release's
+               rules. Only meaningful here, where the two must match. -->
+          <execution>
+            <id>enforce-config-version-matches</id>
+            <inherited>false</inherited>
+            <phase>validate</phase>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireProperty>
+                  <property>imgn.config.version</property>
+                  <regex>^\Q${project.version}\E$</regex>
+                  <regexMessage>imgn.config.version must equal the project version.</regexMessage>
+                </requireProperty>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Declared before checkstyle: both bind to validate, and within a phase
+           Maven runs plugins in declaration order, so code is formatted before
+           it is checked. -->
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+      </plugin>
+
+      <!-- inherited=false: these are THIS POM's own tests. Nothing else here
+           proves the quality gates still bite, so each project under src/it is
+           built for real against the POM being built. A gate that silently stops
+           enforcing turns an expected failure into a success, and fails the IT. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-invoker-plugin</artifactId>
+        <version>${maven-invoker-plugin.version}</version>
+        <inherited>false</inherited>
+        <configuration>
+          <projectsDirectory>src/it</projectsDirectory>
+          <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+          <showErrors>true</showErrors>
+          <streamLogs>false</streamLogs>
+        </configuration>
+        <executions>
+          <execution>
+            <id>integration-test</id>
+            <goals>
+              <goal>install</goal>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+
+    <pluginManagement>
+      <plugins>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>${maven-clean-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>${maven-resources-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>${maven-compiler-plugin.version}</version>
+          <configuration>
+            <release>${java.release}</release>
+            <parameters>true</parameters>
+            <showDeprecation>true</showDeprecation>
+            <showWarnings>true</showWarnings>
+            <!-- Error Prone reflects into javac internals, which are only
+                 openable in a forked compiler process. -->
+            <fork>true</fork>
+            <compilerArgs>
+              <arg>-Xlint:all</arg>
+              <arg>-Werror</arg>
+              <!-- -J flags go to the forked javac, not to this Maven process. -->
+              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
+              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
+              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
+              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
+              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
+              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
+              <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+              <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+              <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+              <arg>-XDcompilePolicy=simple</arg>
+              <!-- Required by the simple compile policy: stop after FLOW on
+                   error so Error Prone diagnostics are emitted first. -->
+              <arg>--should-stop=ifError=FLOW</arg>
+              <arg>-Xplugin:ErrorProne -XepDisableWarningsInGeneratedCode -XepExcludedPaths:.*/target/generated-sources/.* -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=${nullaway.annotated.packages} -Xep:SystemOut:${errorprone.systemout.severity} -Xep:UnnecessarilyFullyQualified:ERROR</arg>
+            </compilerArgs>
+            <annotationProcessorPaths>
+              <path>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_core</artifactId>
+                <version>${errorprone.version}</version>
+              </path>
+              <path>
+                <groupId>com.uber.nullaway</groupId>
+                <artifactId>nullaway</artifactId>
+                <version>${nullaway.version}</version>
+              </path>
+            </annotationProcessorPaths>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${maven-surefire-plugin.version}</version>
+          <configuration>
+            <failIfNoSpecifiedTests>true</failIfNoSpecifiedTests>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>${maven-failsafe-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>integration-test</id>
+              <goals>
+                <goal>integration-test</goal>
+                <goal>verify</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>${maven-jar-plugin.version}</version>
+          <configuration>
+            <archive>
+              <manifest>
+                <addDefaultEntries>true</addDefaultEntries>
+                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              </manifest>
+            </archive>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-install-plugin</artifactId>
+          <version>${maven-install-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>${maven-deploy-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>${maven-site-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>${maven-dependency-plugin.version}</version>
+          <configuration>
+            <!-- Annotations with CLASS/SOURCE retention leave no trace in the
+                 bytecode the analyzer reads, so they always look unused. -->
+            <ignoredUnusedDeclaredDependencies>
+              <ignoredUnusedDeclaredDependency>org.jspecify:jspecify</ignoredUnusedDeclaredDependency>
+            </ignoredUnusedDeclaredDependencies>
+            <!-- Depending on the junit-jupiter aggregate while importing from
+                 junit-jupiter-api is the idiomatic usage, but the analyzer sees
+                 only the artifact the classes actually came from. -->
+            <ignoredUsedUndeclaredDependencies>
+              <ignoredUsedUndeclaredDependency>org.junit.jupiter:*</ignoredUsedUndeclaredDependency>
+              <ignoredUsedUndeclaredDependency>org.junit.platform:*</ignoredUsedUndeclaredDependency>
+            </ignoredUsedUndeclaredDependencies>
+          </configuration>
+          <executions>
+            <execution>
+              <id>analyze-dependencies</id>
+              <phase>verify</phase>
+              <goals>
+                <goal>analyze-only</goal>
+              </goals>
+              <configuration>
+                <failOnWarning>true</failOnWarning>
+                <ignoreNonCompile>true</ignoreNonCompile>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+
+        <!-- A child generates its wrapper with a bare `mvn wrapper:wrapper`:
+             version, distribution and Maven version all come from here, so every
+             project pins the same Maven. Deliberately the same property the
+             enforcer floor uses, so the pinned Maven can never be older than the
+             minimum the build demands. -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-wrapper-plugin</artifactId>
+          <version>${maven-wrapper-plugin.version}</version>
+          <configuration>
+            <mavenVersion>${minimum.maven.version}</mavenVersion>
+            <distributionType>only-script</distributionType>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>${maven-source-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>${maven-javadoc-plugin.version}</version>
+          <configuration>
+            <release>${java.release}</release>
+            <doclint>all,-missing</doclint>
+            <failOnWarnings>true</failOnWarnings>
+            <notimestamp>true</notimestamp>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>${maven-gpg-plugin.version}</version>
+          <configuration>
+            <gpgArguments>
+              <arg>--pinentry-mode</arg>
+              <arg>loopback</arg>
+            </gpgArguments>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>${maven-release-plugin.version}</version>
+          <configuration>
+            <autoVersionSubmodules>true</autoVersionSubmodules>
+            <useReleaseProfile>false</useReleaseProfile>
+            <releaseProfiles>release</releaseProfiles>
+            <tagNameFormat>v@{project.version}</tagNameFormat>
+            <goals>deploy</goals>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>${maven-enforcer-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>enforce-build-rules</id>
+              <phase>validate</phase>
+              <goals>
+                <goal>enforce</goal>
+              </goals>
+              <configuration>
+                <rules>
+                  <requireMavenVersion>
+                    <version>[${minimum.maven.version},)</version>
+                  </requireMavenVersion>
+                  <requireJavaVersion>
+                    <version>[${java.release},)</version>
+                  </requireJavaVersion>
+                  <banDynamicVersions>
+                    <allowSnapshots>false</allowSnapshots>
+                  </banDynamicVersions>
+                  <banDuplicatePomDependencyVersions/>
+                  <bannedDependencies>
+                    <excludes>
+                      <!-- Whole group: also covers lombok-mapstruct-binding etc. -->
+                      <exclude>org.projectlombok</exclude>
+                    </excludes>
+                    <message>Lombok is not allowed.</message>
+                  </bannedDependencies>
+                  <dependencyConvergence/>
+                  <requireUpperBoundDeps/>
+                  <reactorModuleConvergence/>
+                  <!-- A released POM must resolve from the configured mirrors
+                       alone, never from a repository it declares itself. -->
+                  <requireNoRepositories/>
+                  <!-- Nothing may resolve to a floating plugin version. -->
+                  <requirePluginVersions/>
+                  <!-- A typo'd -P name fails instead of silently doing nothing. -->
+                  <requireProfileIdsExist/>
+                </rules>
+              </configuration>
+            </execution>
+            <!-- Only bites when actually releasing; see the release profile. -->
+            <execution>
+              <id>enforce-no-snapshots</id>
+              <phase>validate</phase>
+              <goals>
+                <goal>enforce</goal>
+              </goals>
+              <configuration>
+                <skip>${skip.release.enforcement}</skip>
+                <rules>
+                  <requireReleaseDeps>
+                    <message>No SNAPSHOT dependencies allowed in a release.</message>
+                  </requireReleaseDeps>
+                  <requireReleaseVersion/>
+                </rules>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>${maven-checkstyle-plugin.version}</version>
+          <dependencies>
+            <!-- Override the Checkstyle version the plugin ships with. -->
+            <dependency>
+              <groupId>com.puppycrawl.tools</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>${checkstyle.version}</version>
+            </dependency>
+            <!-- Carries checkstyle.xml on the plugin classpath, so no relative paths. -->
+            <dependency>
+              <groupId>be.imgn.parent</groupId>
+              <artifactId>parent</artifactId>
+              <version>${imgn.config.version}</version>
+              <classifier>config</classifier>
+            </dependency>
+          </dependencies>
+          <configuration>
+            <configLocation>be/imgn/build/checkstyle.xml</configLocation>
+            <suppressionsLocation>be/imgn/build/checkstyle-suppressions.xml</suppressionsLocation>
+            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+            <consoleOutput>true</consoleOutput>
+            <failsOnError>true</failsOnError>
+            <violationSeverity>warning</violationSeverity>
+            <linkXRef>false</linkXRef>
+          </configuration>
+          <executions>
+            <execution>
+              <id>checkstyle-check</id>
+              <phase>validate</phase>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
+        <plugin>
+          <groupId>org.pitest</groupId>
+          <artifactId>pitest-maven</artifactId>
+          <version>${pitest-maven.version}</version>
+          <dependencies>
+            <!-- Teaches PIT to run JUnit Platform tests. -->
+            <dependency>
+              <groupId>org.pitest</groupId>
+              <artifactId>pitest-junit5-plugin</artifactId>
+              <version>${pitest-junit5-plugin.version}</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+
+        <plugin>
+          <groupId>com.diffplug.spotless</groupId>
+          <artifactId>spotless-maven-plugin</artifactId>
+          <version>${spotless-maven-plugin.version}</version>
+          <configuration>
+            <java>
+              <excludes>
+                <exclude>**/module-info.java</exclude>
+                <exclude>**/package-info.java</exclude>
+              </excludes>
+              <palantirJavaFormat>
+                <version>${palantir-java-format.version}</version>
+                <style>PALANTIR</style>
+                <formatJavadoc>true</formatJavadoc>
+              </palantirJavaFormat>
+              <removeUnusedImports/>
+              <!-- \# is the static-import group; the trailing comma is
+                   everything else. Mirrors checkstyle's CustomImportOrder
+                   STATIC###THIRD_PARTY_PACKAGE. -->
+              <importOrder>
+                <order>\#,</order>
+              </importOrder>
+              <trimTrailingWhitespace/>
+              <endWithNewline/>
+            </java>
+          </configuration>
+          <executions>
+            <execution>
+              <id>spotless-apply</id>
+              <phase>validate</phase>
+              <goals>
+                <goal>apply</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>versions-maven-plugin</artifactId>
+          <version>${versions-maven-plugin.version}</version>
+          <configuration>
+            <!-- Inline rather than a rulesUri: nothing reads these but this
+                 plugin, so they need not travel in the config jar. Note the
+                 element form (<type>/<version>) — the attribute form used by an
+                 external rules XML is not read here, and a rule that matches
+                 nothing looks exactly like one that works. -->
+            <ruleSet>
+              <ignoreVersions>
+                <!-- 1.2.3-alpha, 1.2.3.beta2, 1.2.3-RC1, 1.2.3-M1, 1.2.3-cr1,
+                     1.2.3-ea, 1.2.3-preview, 1.2.3-incubating, ... -->
+                <ignoreVersion>
+                  <type>regex</type>
+                  <version>(?i).*[.\-_](alpha|beta|rc|cr|m|milestone|preview|pre|ea|early|dev|snapshot|incubating|next|canary|nightly)([.\-_]?\d+)?(-.*)?</version>
+                </ignoreVersion>
+                <!-- Trailing forms with no separator: 1.2.3RC1, 1.2.3M2 -->
+                <ignoreVersion>
+                  <type>regex</type>
+                  <version>(?i).*\d(alpha|beta|rc|cr|m)\d+</version>
+                </ignoreVersion>
+                <!-- Build/candidate suffixes: 1.2.3-b04, 1.2.3.v20260101 -->
+                <ignoreVersion>
+                  <type>regex</type>
+                  <version>(?i).*[.\-_]b\d+</version>
+                </ignoreVersion>
+                <ignoreVersion>
+                  <type>regex</type>
+                  <version>(?i).*[.\-_]v?\d{8}(\d{4})?</version>
+                </ignoreVersion>
+                <!-- Platform classifiers baked into the version -->
+                <ignoreVersion>
+                  <type>regex</type>
+                  <version>(?i).*[.\-_](android|jre\d+|jdk\d+)</version>
+                </ignoreVersion>
+              </ignoreVersions>
+            </ruleSet>
+            <generateBackupPoms>false</generateBackupPoms>
+            <allowSnapshots>false</allowSnapshots>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.sonatype.central</groupId>
+          <artifactId>central-publishing-maven-plugin</artifactId>
+          <version>${central-publishing-maven-plugin.version}</version>
+          <extensions>true</extensions>
+          <configuration>
+            <publishingServerId>central</publishingServerId>
+            <autoPublish>false</autoPublish>
+            <waitUntil>validated</waitUntil>
+          </configuration>
+        </plugin>
+
+      </plugins>
+    </pluginManagement>
+  </build>
+
+  <profiles>
+    <!-- Checkstyle reads its ruleset from the config jar attached to this very
+         POM, which does not exist while this POM is being built. Gate it on the
+         presence of Java sources: this POM has none, every real project does. -->
+    <profile>
+      <id>checkstyle-for-java-projects</id>
+      <activation>
+        <file>
+          <exists>${basedir}/src/main/java</exists>
+        </file>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+          </plugin>
+
+          <!-- The build reads the ruleset straight off the plugin classpath, but
+               IDE plugins need a real file. Unpack it to a path that is the same
+               in every project, so .idea/checkstyle-idea.xml can be committed.
+               Declared here alongside analyze-only; both are executions of the
+               same plugin, which Maven merges. -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>unpack-checkstyle-config</id>
+                <phase>initialize</phase>
+                <goals>
+                  <goal>unpack</goal>
+                </goals>
+                <configuration>
+                  <artifactItems>
+                    <artifactItem>
+                      <groupId>be.imgn.parent</groupId>
+                      <artifactId>parent</artifactId>
+                      <version>${imgn.config.version}</version>
+                      <classifier>config</classifier>
+                      <includes>be/imgn/build/*.xml</includes>
+                      <outputDirectory>${project.build.directory}/checkstyle</outputDirectory>
+                    </artifactItem>
+                  </artifactItems>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- Keeps the release-only enforcer rules quiet during normal development. -->
+    <profile>
+      <id>dev-defaults</id>
+      <activation>
+        <property>
+          <name>!performRelease</name>
+        </property>
+      </activation>
+      <properties>
+        <skip.release.enforcement>true</skip.release.enforcement>
+      </properties>
+    </profile>
+
+    <!-- mvn -Prelease deploy  (or let maven-release-plugin trigger it) -->
+    <profile>
+      <id>release</id>
+      <properties>
+        <skip.release.enforcement>false</skip.release.enforcement>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar-no-fork</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+</project>

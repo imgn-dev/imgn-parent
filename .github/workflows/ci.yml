@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 25 is what everything compiles to; the newest JDK is built too, because
+        # Error Prone reflects into javac internals and breaks on new releases.
+        java: ['25', '26']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+
+      # verify runs the invoker integration tests under src/it, which are the
+      # only thing proving the quality gates still enforce.
+      - name: Build and verify
+        run: ./mvnw -B --no-transfer-progress clean verify
+
+      - name: Upload integration test logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: it-logs-jdk${{ matrix.java }}
+          path: target/it/*/build.log
+          if-no-files-found: ignore

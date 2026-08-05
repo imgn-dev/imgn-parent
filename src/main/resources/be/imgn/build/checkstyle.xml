@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<module name="Checker">
+
+  <property name="severity" value="error"/>
+  <property name="charset" value="UTF-8"/>
+  <property name="fileExtensions" value="java, properties, xml"/>
+
+  <module name="SuppressionFilter">
+    <property name="file" value="${checkstyle.suppressions.file}" default=""/>
+    <property name="optional" value="true"/>
+  </module>
+
+  <module name="NewlineAtEndOfFile"/>
+  <module name="FileTabCharacter"/>
+  <module name="UniqueProperties"/>
+
+  <module name="RegexpSingleline">
+    <property name="format" value="\s+$"/>
+    <property name="message" value="Trailing whitespace."/>
+  </module>
+
+  <module name="LineLength">
+    <property name="max" value="120"/>
+    <property name="ignorePattern" value="^package .*|^import .*|^\s*\*.*https?://"/>
+  </module>
+
+  <module name="TreeWalker">
+
+    <module name="SuppressionCommentFilter"/>
+    <module name="SuppressWarningsHolder"/>
+
+    <!-- Imports: fully qualified names belong in imports, nowhere else. -->
+    <module name="AvoidStarImport"/>
+    <module name="RedundantImport"/>
+    <module name="UnusedImports">
+      <property name="processJavadoc" value="true"/>
+    </module>
+    <!-- lombok: the enforcer bans the dependency, but Lombok added via the
+         compiler's annotationProcessorPaths is not a dependency, so catch the
+         import too. -->
+    <module name="IllegalImport">
+      <property name="illegalPkgs" value="sun,lombok"/>
+    </module>
+    <module name="CustomImportOrder">
+      <property name="sortImportsInGroupAlphabetically" value="true"/>
+      <property name="separateLineBetweenGroups" value="true"/>
+      <property name="customImportOrderRules" value="STATIC###THIRD_PARTY_PACKAGE"/>
+    </module>
+
+    <!-- Immutability by default. -->
+    <module name="FinalClass"/>
+    <module name="VisibilityModifier">
+      <property name="protectedAllowed" value="false"/>
+      <property name="allowPublicFinalFields" value="false"/>
+    </module>
+    <module name="MutableException"/>
+
+    <!-- Structure. -->
+    <module name="OneTopLevelClass"/>
+    <module name="OuterTypeFilename"/>
+    <module name="HideUtilityClassConstructor"/>
+    <module name="InterfaceIsType"/>
+    <module name="DeclarationOrder"/>
+    <module name="OverloadMethodsDeclarationOrder"/>
+    <module name="InnerTypeLast"/>
+
+    <!-- Correctness. -->
+    <module name="EqualsHashCode"/>
+    <module name="CovariantEquals"/>
+    <module name="MissingOverride"/>
+    <module name="MissingSwitchDefault"/>
+    <module name="FallThrough"/>
+    <module name="SimplifyBooleanExpression"/>
+    <module name="SimplifyBooleanReturn"/>
+    <module name="StringLiteralEquality"/>
+    <module name="NoFinalizer"/>
+    <module name="IllegalCatch"/>
+    <module name="IllegalThrows"/>
+    <module name="EqualsAvoidNull"/>
+    <module name="ModifiedControlVariable"/>
+    <module name="DefaultComesLast"/>
+    <module name="MultipleVariableDeclarations"/>
+    <module name="OneStatementPerLine"/>
+    <module name="NestedTryDepth">
+      <property name="max" value="1"/>
+    </module>
+    <module name="ReturnCount">
+      <property name="max" value="4"/>
+      <property name="maxForVoid" value="2"/>
+    </module>
+
+    <!-- Readability. -->
+    <module name="NeedBraces"/>
+    <module name="LeftCurly"/>
+    <module name="RightCurly"/>
+    <module name="EmptyBlock">
+      <property name="option" value="text"/>
+    </module>
+    <module name="EmptyCatchBlock">
+      <property name="exceptionVariableName" value="expected|ignored"/>
+    </module>
+    <module name="UpperEll"/>
+    <module name="ArrayTypeStyle"/>
+    <module name="ModifierOrder"/>
+    <module name="RedundantModifier"/>
+    <module name="WhitespaceAround">
+      <property name="allowEmptyConstructors" value="true"/>
+      <property name="allowEmptyMethods" value="true"/>
+      <property name="allowEmptyLambdas" value="true"/>
+    </module>
+    <module name="WhitespaceAfter"/>
+    <module name="NoWhitespaceBefore"/>
+    <module name="GenericWhitespace"/>
+    <module name="MethodParamPad"/>
+    <module name="ParenPad"/>
+    <module name="Indentation">
+      <property name="basicOffset" value="4"/>
+      <property name="lineWrappingIndentation" value="8"/>
+    </module>
+
+    <!-- Naming. -->
+    <module name="PackageName">
+      <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
+    </module>
+    <module name="TypeName"/>
+    <module name="MethodName"/>
+    <module name="LocalVariableName"/>
+    <module name="LocalFinalVariableName"/>
+    <module name="MemberName"/>
+    <module name="ParameterName"/>
+    <module name="ConstantName"/>
+    <module name="RecordComponentName"/>
+    <module name="PatternVariableName"/>
+    <module name="LambdaParameterName"/>
+
+    <!-- Size. -->
+    <module name="MethodLength">
+      <property name="max" value="60"/>
+      <property name="countEmpty" value="false"/>
+    </module>
+    <module name="ParameterNumber">
+      <property name="max" value="7"/>
+      <property name="ignoreOverriddenMethods" value="true"/>
+    </module>
+    <module name="CyclomaticComplexity">
+      <property name="max" value="12"/>
+    </module>
+
+    <!-- Comments: only ones that carry weight, and kept accurate. -->
+    <module name="CommentsIndentation"/>
+    <module name="TrailingComment"/>
+    <module name="JavadocMethod">
+      <property name="accessModifiers" value="public"/>
+      <property name="validateThrows" value="true"/>
+    </module>
+    <module name="JavadocType">
+      <property name="scope" value="public"/>
+    </module>
+    <module name="NonEmptyAtclauseDescription"/>
+    <module name="JavadocParagraph"/>
+    <module name="InvalidJavadocPosition"/>
+
+    <!-- Housekeeping. -->
+    <module name="MagicNumber">
+      <property name="ignoreAnnotation" value="true"/>
+      <property name="ignoreHashCodeMethod" value="true"/>
+    </module>
+    <module name="TodoComment">
+      <property name="severity" value="warning"/>
+      <property name="format" value="(TODO)|(FIXME)|(XXX)"/>
+    </module>
+  </module>
+</module>
