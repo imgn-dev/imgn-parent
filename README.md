@@ -134,8 +134,16 @@ that property — point it at `checkstyle-suppressions.xml` next to it. Set the
 Checkstyle version to match `${checkstyle.version}`, or the IDE and the build
 will disagree about what the rules mean.
 
-The path is relative to the project, and identical everywhere, so
-`.idea/checkstyle-idea.xml` can be committed and shared.
+The path is relative to the project and identical everywhere, so the setting is
+the same in every project — but it is configured per developer. IntelliJ writes
+it to `.idea/checkstyle-idea.xml`, which is commonly excluded by a global
+`~/.config/git/ignore` rule, so do not count on it being committed.
+
+Enabling **Import settings from Maven** in the Checkstyle plugin avoids the
+manual setup entirely: it reads `<configLocation>`, `<suppressionsLocation>` and
+the Checkstyle version straight from the POM on every Maven import, resolving
+the ruleset from the plugin classpath — the config jar. Nothing to point at by
+hand, and it cannot drift from the build.
 
 Two caveats. The files only exist after a build, so a fresh clone shows a broken
 config path until one runs. And `mvn validate` is not enough — `validate` runs
@@ -331,7 +339,7 @@ versions and dependencies. During normal development those release-only rules
 are skipped by the auto-activated `dev-defaults` profile. `autoPublish` is
 false, so a deployment waits in the Central portal for a human to release it.
 
-**`maven-release-plugin` is deliberately not used by the workflow.**
+**`maven-release-plugin` is deliberately not configured at all.**
 `release:prepare` rewrites `<version>` but knows nothing about
 `imgn.config.version`, so the enforcer rule guarding the two would fail the
 release. The workflow sets both with `versions:set` and
