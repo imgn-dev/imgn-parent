@@ -21,6 +21,13 @@ fi
 
 set -euo pipefail
 
+# pinentry needs to know which terminal to prompt on. Without this, gpg run
+# inside a pipeline reports "no passphrase supplied" instead of asking.
+if [ -t 0 ] && command -v tty >/dev/null 2>&1; then
+    GPG_TTY=$(tty)
+    export GPG_TTY
+fi
+
 REPO='imgn-dev/imgn-parent'
 DOMAIN='imgn.be'
 NAMESPACE='be.imgn'
@@ -63,6 +70,19 @@ list_secret_key_ids() {
 # Lines in $2 that are absent from $1. Used to spot a freshly created key.
 added_lines() {
     grep -vxF -f <(printf '%s\n' "$1") <<<"$2" || true
+}
+
+# How many secret keys a pattern matches. An empty or ambiguous pattern makes
+# gpg walk every key it knows, prompting for passphrases of unrelated keys.
+count_secret_keys_matching() {
+    [[ -n ${1:-} ]] || { echo 0; return; }
+    gpg --list-secret-keys --with-colons "$1" 2>/dev/null \
+        | grep -c '^sec' || true
+}
+
+# An armoured private key, or nothing. Never let an empty export reach a secret.
+looks_like_private_key() {
+    grep -q 'BEGIN PGP PRIVATE KEY BLOCK' <<<"$1"
 }
 
 # Later of two date-ish versions must be strictly greater, lexically.
@@ -151,6 +171,11 @@ setup_key() {
         [[ -n ${KEY_ID:-} ]] || die 'No key ID selected.'
     fi
 
+    local matches
+    matches=$(count_secret_keys_matching "$KEY_ID")
+    [[ $matches -eq 1 ]] \
+        || die "'$KEY_ID' matches $matches secret keys; it must match exactly one."
+
     info 'Signing identity:'
     gpg --list-keys --keyid-format=long "$KEY_ID" | sed 's/^/    /' \
         || die "No such key: $KEY_ID"
@@ -189,9 +214,15 @@ set_secrets() {
     if grep -qx GPG_PRIVATE_KEY <<<"$existing"; then
         info 'GPG_PRIVATE_KEY already set — skipping.'
     else
-        info 'Exporting the private key straight into the secret (no file on disk).'
-        gpg --armor --export-secret-keys "$KEY_ID" \
-            | gh secret set GPG_PRIVATE_KEY --repo "$REPO"
+        local exported
+        info "Unlocking key $KEY_ID. gpg will ask for THAT key's passphrase."
+        # Captured, not piped straight to gh: a failed export prints a warning
+        # and produces nothing, which would otherwise store an empty secret.
+        exported=$(gpg --armor --export-secret-keys "$KEY_ID") || true
+        looks_like_private_key "$exported" \
+            || die "Export of $KEY_ID produced no key. Wrong passphrase, or gpg could not prompt."
+        printf '%s' "$exported" | gh secret set GPG_PRIVATE_KEY --repo "$REPO"
+        unset exported
         ok 'GPG_PRIVATE_KEY set'
     fi
 }
@@ -229,7 +260,7 @@ export_vault_bundle() {
             echo "  gpg --import <this file>"
             echo
             echo "----- PRIVATE KEY -----"
-            gpg --armor --export-secret-keys "$KEY_ID"
+            gpg --armor --export-secret-keys "$KEY_ID" || true
             echo
             echo "----- PUBLIC KEY -----"
             gpg --armor --export "$KEY_ID"
@@ -244,6 +275,8 @@ export_vault_bundle() {
     )
 
     chmod 600 "$bundle"
+    grep -q 'BEGIN PGP PRIVATE KEY BLOCK' "$bundle" \
+        || die "No private key landed in $bundle. Remove it and retry."
     ok "written to $bundle"
     info 'Move it into your vault now, then remove the copy on disk:'
     info "  rm -P '$bundle'"
