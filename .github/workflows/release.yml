@@ -88,8 +88,15 @@ jobs:
         run: ./mvnw -B --no-transfer-progress -Prelease -DskipTests deploy
 
       - name: Tag the release
+        # The POM may already sit at the version being released, in which case
+        # versions:set changed nothing and there is nothing to commit. That must
+        # not fail the run: publishing has already happened by this point.
         run: |
-          git commit -am 'Release ${{ inputs.releaseVersion }}'
+          if git diff --quiet; then
+            echo 'Already at ${{ inputs.releaseVersion }}, nothing to commit.'
+          else
+            git commit -am 'Release ${{ inputs.releaseVersion }}'
+          fi
           git tag -a 'v${{ inputs.releaseVersion }}' -m 'Release ${{ inputs.releaseVersion }}'
 
       - name: Start the next development version
