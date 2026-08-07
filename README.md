@@ -79,6 +79,11 @@ Every child gets these without declaring anything:
 | `validate` | Checkstyle | Enforces the shared ruleset |
 | `compile` | Error Prone + NullAway | Static analysis and null-safety, as compile errors |
 
+`reactorModuleConvergence` has two consequences worth knowing before they
+surprise you. A reactor module whose parent is not the reactor root fails the
+rule, so a parentless or externally-parented BOM module cannot stay in the
+aggregator. And `mvn -pl <module>` fails unless you also pass `-am`.
+
 Spotless is declared before Checkstyle on purpose: both bind to `validate`, and
 Maven runs plugins in declaration order within a phase, so code is formatted
 before it is checked.
@@ -90,6 +95,33 @@ leave no trace in bytecode and so always look unused, and the JUnit artifacts,
 because depending on the `junit-jupiter` aggregate while importing from
 `junit-jupiter-api` is the idiomatic usage.
 
+## Turning off an Error Prone check
+
+Error Prone runs with `-Werror`, so a check that fights a project's conventions
+is fatal and cannot be suppressed per site at any sane scale. Override
+`errorprone.extra.args`, which is appended verbatim to the plugin argument:
+
+```xml
+<properties>
+  <errorprone.extra.args>-Xep:InvalidInlineTag:OFF</errorprone.extra.args>
+</properties>
+```
+
+Space-separate several. This exists so a child never has to override
+`<compilerArgs>`, which would silently discard the `add-exports` flags, the
+compile policy and NullAway along with it.
+
+## Layout belongs to the formatter
+
+Checkstyle here deliberately carries no `Indentation` module, and
+`WhitespaceAround` permits every empty body. Spotless and Checkstyle both bind
+to `validate`, Spotless first, so anything Checkstyle demands that
+palantir-java-format does not produce is unfixable in a child project: the
+formatter rewrites the file moments before the linter reads it. Whatever
+palantir emits is the house style.
+
+`src/it/formatter-checkstyle-agreement` is what keeps that true.
+
 ## Testing this POM
 
 `src/it/` holds real projects built against the POM under construction, run by
@@ -98,8 +130,11 @@ because depending on the `junit-jupiter` aggregate while importing from
 | Project | Expected |
 |---|---|
 | `clean-project` | builds green |
+| `formatter-checkstyle-agreement` | builds green — empty records, marker interfaces and wrapped lambdas, with no suppressions |
+| `errorprone-extra-args` | builds green — a custom inline Javadoc tag, with the check switched off |
 | `checkstyle-violation` | **fails** — magic number |
 | `nullaway-violation` | **fails** — null passed where non-null required |
+| `errorprone-extra-args-absent` | **fails** — same sources, without the property |
 
 The two failing projects are the point: if a gate ever stops enforcing, its
 build succeeds, which does not match `invoker.buildResult = failure`, and the

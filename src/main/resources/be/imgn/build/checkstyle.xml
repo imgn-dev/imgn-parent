@@ -107,20 +107,29 @@
     <module name="ArrayTypeStyle"/>
     <module name="ModifierOrder"/>
     <module name="RedundantModifier"/>
+    <!-- Empty bodies are written {} by palantir-java-format, which runs one step
+         earlier in the same phase. Rejecting them here is unfixable downstream:
+         spotless:apply rewrites { } back to {} before checkstyle:check reads the
+         file. Empty records and marker interfaces are the normal shape of a
+         sealed ADT. -->
     <module name="WhitespaceAround">
       <property name="allowEmptyConstructors" value="true"/>
       <property name="allowEmptyMethods" value="true"/>
       <property name="allowEmptyLambdas" value="true"/>
+      <property name="allowEmptyTypes" value="true"/>
+      <property name="allowEmptyLoops" value="true"/>
+      <property name="allowEmptyCatches" value="true"/>
     </module>
     <module name="WhitespaceAfter"/>
     <module name="NoWhitespaceBefore"/>
     <module name="GenericWhitespace"/>
     <module name="MethodParamPad"/>
     <module name="ParenPad"/>
-    <module name="Indentation">
-      <property name="basicOffset" value="4"/>
-      <property name="lineWrappingIndentation" value="8"/>
-    </module>
+    <!-- No Indentation module on purpose. Layout is owned by
+         palantir-java-format, which runs one step earlier in the same phase, so
+         whatever it emits is the house style by definition. Checkstyle demanding
+         a different continuation indent than the formatter produces is a
+         contradiction no child project can resolve. -->
 
     <!-- Naming. -->
     <module name="PackageName">

@@ -31,6 +31,13 @@
          lives elsewhere. -->
     <nullaway.annotated.packages>be.imgn</nullaway.annotated.packages>
 
+    <!-- Appended verbatim to the Error Prone plugin argument, so a child can
+         switch a check off without overriding <compilerArgs> and losing the
+         add-exports flags, the compile policy and NullAway with it. One
+         property on purpose: no per-check knobs.
+         Example: <errorprone.extra.args>-Xep:InvalidInlineTag:OFF</errorprone.extra.args> -->
+    <errorprone.extra.args></errorprone.extra.args>
+
     <!-- Printing to stdout/stderr is a bug everywhere except in a command-line
          tool, where it is the whole point. Such a module sets this to OFF; a
          single main method can instead use @SuppressWarnings("SystemOut"). -->
@@ -134,6 +141,14 @@
         <artifactId>jqwik</artifactId>
         <version>${jqwik.version}</version>
         <scope>test</scope>
+      </dependency>
+      <!-- Libraries compiled against these (Guava-adjacent ones, JDBI) emit
+           "Cannot find annotation method 'value()' in type 'GuardedBy'" when the
+           annotations are absent, which -Werror makes fatal. -->
+      <dependency>
+        <groupId>com.google.errorprone</groupId>
+        <artifactId>error_prone_annotations</artifactId>
+        <version>${errorprone.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jspecify</groupId>
@@ -293,7 +308,7 @@
               <!-- Required by the simple compile policy: stop after FLOW on
                    error so Error Prone diagnostics are emitted first. -->
               <arg>--should-stop=ifError=FLOW</arg>
-              <arg>-Xplugin:ErrorProne -XepDisableWarningsInGeneratedCode -XepExcludedPaths:.*/target/generated-sources/.* -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=${nullaway.annotated.packages} -Xep:SystemOut:${errorprone.systemout.severity} -Xep:UnnecessarilyFullyQualified:ERROR</arg>
+              <arg>-Xplugin:ErrorProne -XepDisableWarningsInGeneratedCode -XepExcludedPaths:.*/target/generated-sources/.* -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=${nullaway.annotated.packages} -Xep:SystemOut:${errorprone.systemout.severity} -Xep:UnnecessarilyFullyQualified:ERROR ${errorprone.extra.args}</arg>
             </compilerArgs>
             <annotationProcessorPaths>
               <path>
