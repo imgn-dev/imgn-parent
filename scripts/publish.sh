@@ -21,6 +21,10 @@ fi
 
 set -euo pipefail
 
+# Diagnostics in English. LC_MESSAGES rather than LC_ALL, which would also
+# change the character encoding.
+export LC_MESSAGES=C
+
 # pinentry needs to know which terminal to prompt on. Without this, gpg run
 # inside a pipeline reports "no passphrase supplied" instead of asking.
 if [ -t 0 ] && command -v tty >/dev/null 2>&1; then
