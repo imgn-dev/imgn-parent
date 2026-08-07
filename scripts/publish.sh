@@ -196,8 +196,63 @@ set_secrets() {
     fi
 }
 
+export_vault_bundle() {
+    bold '5. Vault bundle'
+    info 'GitHub secrets cannot be read back, so this is your only copy of the'
+    info 'key outside ~/.gnupg. Without it a lost machine means a lost identity.'
+    ask_yes 'Write the bundle now?' || { info 'Skipped.'; return; }
+
+    local fingerprint revocation bundle
+    fingerprint=$(gpg --list-keys --with-colons "$KEY_ID" \
+                  | awk -F: '/^fpr/ {print $10; exit}')
+    [[ -n $fingerprint ]] || die "Cannot read the fingerprint of $KEY_ID."
+    revocation="$HOME/.gnupg/openpgp-revocs.d/$fingerprint.rev"
+    bundle="$HOME/imgn-parent-vault-$KEY_ID.txt"
+
+    if [[ -e $bundle ]]; then
+        confirm "$bundle exists. Overwrite?"
+    fi
+
+    # Created 0600 from the outset, never briefly world-readable.
+    (
+        umask 077
+        {
+            echo "be.imgn.parent:parent signing material"
+            echo "Repository : $REPO"
+            echo "Key ID     : $KEY_ID"
+            echo "Fingerprint: $fingerprint"
+            echo
+            echo "The passphrase is deliberately NOT in this file. Store it as a"
+            echo "separate field in your vault, so one leaked file is not enough."
+            echo
+            echo "To restore on a new machine:"
+            echo "  gpg --import <this file>"
+            echo
+            echo "----- PRIVATE KEY -----"
+            gpg --armor --export-secret-keys "$KEY_ID"
+            echo
+            echo "----- PUBLIC KEY -----"
+            gpg --armor --export "$KEY_ID"
+            echo
+            echo "----- REVOCATION CERTIFICATE -----"
+            if [[ -r $revocation ]]; then
+                cat "$revocation"
+            else
+                echo "(none found at $revocation)"
+            fi
+        } >"$bundle"
+    )
+
+    chmod 600 "$bundle"
+    ok "written to $bundle"
+    info 'Move it into your vault now, then remove the copy on disk:'
+    info "  rm -P '$bundle'"
+    info 'It is unencrypted: anyone reading it holds your signing identity.'
+    confirm 'Stored it in your vault?'
+}
+
 run_release() {
-    bold '5. Release'
+    bold '6. Release'
     info "Release version : $RELEASE_VERSION"
     info "Next version    : $NEXT_VERSION-SNAPSHOT"
     info 'This publishes signed artifacts to Central, tags the commit and pushes.'
@@ -248,6 +303,7 @@ main() {
     check_namespace
     setup_key
     set_secrets
+    export_vault_bundle
     run_release
 }
 
