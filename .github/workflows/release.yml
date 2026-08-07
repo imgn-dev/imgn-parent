@@ -85,7 +85,13 @@ jobs:
         # -Prelease attaches sources and javadoc, signs with GPG, and hands the
         # bundle to central-publishing-maven-plugin. autoPublish is false, so the
         # deployment waits in the Central portal for a human to release it.
-        run: ./mvnw -B --no-transfer-progress -Prelease -DskipTests deploy
+        #
+        # invoker.skip: the Verify step above already ran every integration test.
+        # Running them again here would fork child builds while the release
+        # profile is active, and those children then try to GPG-sign artifacts of
+        # their own, which fails. Nothing is lost — this step publishes, it does
+        # not test.
+        run: ./mvnw -B --no-transfer-progress -Prelease -DskipTests -Dinvoker.skip=true deploy
 
       - name: Tag the release
         # The POM may already sit at the version being released, in which case
