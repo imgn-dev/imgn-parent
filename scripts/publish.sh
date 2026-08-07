@@ -38,15 +38,31 @@ die()  { printf '\n\033[31merror\033[0m %s\n' "$*" >&2; exit 1; }
 
 # Asks a yes/no question. Anything but an explicit y aborts.
 confirm() {
+    ask_yes "$1" || die 'Stopped at your request.'
+}
+
+# Asks a yes/no question and reports the answer instead of aborting.
+ask_yes() {
     local answer
     read -r -p "  $1 [y/N] " answer
-    [[ $answer == [yY] ]] || die 'Stopped at your request.'
+    [[ $answer == [yY] ]]
 }
 
 # --- pure helpers, unit-testable ----------------------------------------------
 
 valid_version() {
     [[ $1 =~ $VERSION_PATTERN ]]
+}
+
+# Long key IDs of every secret key, one per line, sorted.
+list_secret_key_ids() {
+    gpg --list-secret-keys --keyid-format=long --with-colons 2>/dev/null \
+        | awk -F: '/^sec/ {print $5}' | sort
+}
+
+# Lines in $2 that are absent from $1. Used to spot a freshly created key.
+added_lines() {
+    grep -vxF -f <(printf '%s\n' "$1") <<<"$2" || true
 }
 
 # Later of two date-ish versions must be strictly greater, lexically.
@@ -98,28 +114,47 @@ check_namespace() {
 
 setup_key() {
     bold '3. Signing key'
-    local keys
-    keys=$(gpg --list-secret-keys --keyid-format=long --with-colons 2>/dev/null \
-           | awk -F: '/^sec/ {print $5}')
+    local before after created generate=no
 
-    if [[ -z $keys ]]; then
-        info 'No secret key found. Creating one — choose RSA 4096.'
-        confirm 'Generate a GPG key now?'
-        gpg --full-generate-key
-        keys=$(gpg --list-secret-keys --keyid-format=long --with-colons \
-               | awk -F: '/^sec/ {print $5}')
-        [[ -n $keys ]] || die 'Still no secret key after generation.'
-    fi
+    before=$(list_secret_key_ids)
 
-    if [[ $(wc -l <<<"$keys") -gt 1 ]]; then
-        info 'Several secret keys found:'
-        gpg --list-secret-keys --keyid-format=long
-        read -r -p '  Key ID to sign with: ' KEY_ID
+    if [[ -z $before ]]; then
+        info 'No secret key found.'
+        generate=yes
     else
-        KEY_ID=$keys
+        info 'Secret keys already on this machine:'
+        gpg --list-secret-keys --keyid-format=long | sed 's/^/    /'
+        info 'A key used only for releases is cleaner than reusing a personal'
+        info 'one: revoking it later then affects nothing else you have signed.'
+        ask_yes 'Generate a NEW key for signing releases?' && generate=yes
     fi
-    [[ -n ${KEY_ID:-} ]] || die 'No key ID selected.'
-    ok "using key $KEY_ID"
+
+    if [[ $generate == yes ]]; then
+        info 'Choose RSA 4096, and set a passphrase — CI needs one.'
+        gpg --full-generate-key
+    fi
+
+    after=$(list_secret_key_ids)
+    [[ -n $after ]] || die 'No secret key available.'
+    created=$(added_lines "$before" "$after")
+
+    if [[ -n $created && $(wc -l <<<"$created") -eq 1 ]]; then
+        KEY_ID=$created
+        ok "created key $KEY_ID"
+    elif [[ $(wc -l <<<"$after") -eq 1 ]]; then
+        KEY_ID=$after
+        ok "using the only key present, $KEY_ID"
+    else
+        info 'Which key should sign releases?'
+        gpg --list-secret-keys --keyid-format=long | sed 's/^/    /'
+        read -r -p '  Key ID: ' KEY_ID
+        [[ -n ${KEY_ID:-} ]] || die 'No key ID selected.'
+    fi
+
+    info 'Signing identity:'
+    gpg --list-keys --keyid-format=long "$KEY_ID" | sed 's/^/    /' \
+        || die "No such key: $KEY_ID"
+    confirm 'Sign releases with that key?'
 
     info "Publishing the public half to $KEYSERVER."
     info 'Central rejects any bundle whose public key it cannot find.'
