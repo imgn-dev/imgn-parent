@@ -1,16 +1,21 @@
 # imgn parent
 
-Shared Maven build configuration for all `be.imgn` projects. One artifact,
-published as two files:
+Shared Maven build configuration for all `be.imgn` projects. Two artifacts,
+published as three files:
 
 | File | What it is |
 |---|---|
-| `be.imgn.parent:parent:pom` | The parent POM: dependency management, plugin versions, quality gates, release setup. |
+| `be.imgn.parent:parent:pom` | The parent POM: plugin versions, quality gates, release setup. Inherit it. |
 | `be.imgn.parent:parent:jar:config` | A classified jar built from this repo's `src/main/resources`, carrying `checkstyle.xml` and `checkstyle-suppressions.xml` on the plugin classpath. |
+| `be.imgn.parent:bom:pom` | The library version catalogue. Import it. |
 
 A `pom`-packaged artifact cannot carry classpath resources, so the rulesets ride
-along as a *classified attachment* to the same coordinates rather than as a
+along as a *classified attachment* to the parent's coordinates rather than as a
 separate artifact.
+
+The BOM is separate for the opposite reason: it is the one thing a project should
+be able to take *without* taking the build configuration. See
+[Managed dependency versions](#managed-dependency-versions).
 
 ## Building
 
@@ -70,35 +75,87 @@ agreement here.
 
 ## Managed dependency versions
 
-A shared version catalogue. Declare any of these **without a `<version>`** and
-the parent supplies it:
+Two artifacts, on purpose.
+
+**`be.imgn.parent:parent`** — the build parent. Inheriting it brings the quality
+gates, and the few versions those gates depend on:
 
 | | |
 |---|---|
 | Testing | `junit-bom`, `assertj-bom`, `archunit-junit6`, `jqwik` |
 | Annotations | `jspecify`, `error_prone_annotations` |
+
+**`be.imgn.parent:bom`** — the library catalogue. Opt in with an `<import>`:
+
+```xml
+<dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>be.imgn.parent</groupId>
+      <artifactId>bom</artifactId>
+      <version>2026-09</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+  </dependencies>
+</dependencyManagement>
+```
+
+| | |
+|---|---|
 | JSON | `jackson-bom` (Jackson 3, `tools.jackson`) |
 | Database | `jdbi3-bom`, `h2` |
 | Parsing | `antlr4-runtime` |
 | Logging | `slf4j-bom` |
 | Platform | `directories` |
 
-Nothing here is on a classpath until a child declares it. Managing a version is
-not a recommendation to use the library — it only means that if you do, you do
-not pick the number.
+Then declare what you use **without a `<version>`**. Nothing is on a classpath
+until you declare it: managing a version is not a recommendation to use the
+library, only a statement that the number is not yours to pick.
+
+The split is the point. A build parent that also dictated the JDBI version would
+be making an upgrade decision for every project, including the ones with no
+database. Keeping the catalogue in a separate artifact means a project takes the
+gates and the versions independently — and a project that already has a corporate
+parent it cannot change can still import the catalogue.
+
+**Import and inherit are not the same.** A project that *inherits* can pin one
+library by overriding the property (`<jdbi.version>`); a project that *imports*
+cannot — import takes the resolved versions and its own properties do not
+override them. Inherit the parent, import the BOM, and override a property only
+where inheritance actually reaches.
 
 `error_prone_annotations` is the one worth knowing about: libraries compiled
 against it (JDBI, anything Guava-adjacent) make javac emit *"Cannot find
 annotation method `value()` in type `GuardedBy`"*, which `-Werror` turns fatal.
-Declaring it with no version fixes that.
+Declaring it with no version fixes that. It is in the parent rather than the BOM
+because `-Werror` is a gate, not a library choice.
 
-**ANTLR is a matched pair.** `antlr4-runtime` and `antlr4-maven-plugin` both come
-from `${antlr4.version}`. A runtime that disagrees with the generator fails when
-the parser *runs*, not when it is built, so the symptom is a malfunction rather
-than a build error. Declare the plugin with no `<version>`; never pin one half.
+**ANTLR is a matched pair.** A runtime that disagrees with the generator fails
+when the parser *runs*, not when it is built, so the symptom is a malfunction
+rather than a build error. `${antlr4.version}` is defined once in the parent and
+inherited by the BOM, so there is one number and drift is impossible: the BOM
+manages `antlr4-runtime`, the parent manages `antlr4-maven-plugin`. Declare the
+plugin with no `<version>` and never pin either half yourself.
 
-`src/it/managed-library-versions` declares every one of these with no version,
-so a dropped entry fails here rather than in a consumer.
+`bom/src/it/managed-library-versions` consumes both the way a real project does —
+inherit the parent, import the BOM — and declares six libraries with no version,
+so a dropped entry fails there rather than in a consumer.
+
+### Why `bom/` is not a `<module>`
+
+`<modules>` is inherited. If this POM aggregated `bom/`, every external child
+would inherit that list and try to build a `bom/` directory of its own. So the
+two are separate Maven invocations, parent first:
+
+```
+./mvnw clean install
+./mvnw -f bom/pom.xml clean install
+```
+
+The BOM inherits the parent — for the licence, SCM, developer and signing blocks
+only, so none of it is restated. That inheritance never reaches a consumer: an
+`<import>` takes `dependencyManagement` and nothing else.
 
 ## Quality gates
 
@@ -236,7 +293,7 @@ palantir emits is the house style.
 | `nullaway-violation` | **fails** — null passed where non-null required |
 | `errorprone-extra-args-absent` | **fails** — same sources, without the property |
 | `checkstyle-suppresswarnings-absent` | **fails** — same switch, without the annotation |
-| `managed-library-versions` | builds green — six libraries declared with no `<version>` |
+
 | `javadoc-extra-args-absent` | **fails** — same tag, without the property |
 
 The failing projects are the point: if a gate ever stops enforcing, its

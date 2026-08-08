@@ -73,9 +73,19 @@ jobs:
           ./mvnw -B --no-transfer-progress versions:set-property \
             -Dproperty=imgn.config.version \
             -DnewVersion='${{ inputs.releaseVersion }}' -DgenerateBackupPoms=false
+          # The BOM has no <version> of its own — it inherits one — so its parent
+          # reference is the only string to change. skipResolution because the
+          # version being pointed at is the one this run is about to publish.
+          ./mvnw -B --no-transfer-progress -f bom/pom.xml versions:update-parent \
+            -DparentVersion='${{ inputs.releaseVersion }}' \
+            -DskipResolution=true -DgenerateBackupPoms=false
 
+      # install, not verify: the BOM is a separate build that resolves the parent
+      # from the local repository.
       - name: Verify
-        run: ./mvnw -B --no-transfer-progress clean verify
+        run: |
+          ./mvnw -B --no-transfer-progress clean install
+          ./mvnw -B --no-transfer-progress -f bom/pom.xml clean install
 
       - name: Publish to Maven Central
         env:
@@ -91,7 +101,13 @@ jobs:
         # profile is active, and those children then try to GPG-sign artifacts of
         # their own, which fails. Nothing is lost — this step publishes, it does
         # not test.
-        run: ./mvnw -B --no-transfer-progress -Prelease -DskipTests -Dinvoker.skip=true deploy
+        #
+        # Two deployments, parent then BOM. They are separate builds because the
+        # parent cannot aggregate the BOM: <modules> is inherited, so every
+        # external child would try to build a bom/ of its own.
+        run: |
+          ./mvnw -B --no-transfer-progress -Prelease -DskipTests -Dinvoker.skip=true deploy
+          ./mvnw -B --no-transfer-progress -f bom/pom.xml -Prelease -DskipTests -Dinvoker.skip=true deploy
 
       - name: Tag the release
         # The POM may already sit at the version being released, in which case
@@ -113,6 +129,8 @@ jobs:
           ./mvnw -B --no-transfer-progress versions:set-property \
             -Dproperty=imgn.config.version \
             -DnewVersion="$next" -DgenerateBackupPoms=false
+          ./mvnw -B --no-transfer-progress -f bom/pom.xml versions:update-parent \
+            -DparentVersion="$next" -DskipResolution=true -DgenerateBackupPoms=false
           git commit -am "Start $next"
           git push origin HEAD --follow-tags
 

@@ -33,14 +33,24 @@ jobs:
           cache: maven
 
       # verify runs the invoker integration tests under src/it, which are the
-      # only thing proving the quality gates still enforce.
-      - name: Build and verify
-        run: ./mvnw -B --no-transfer-progress clean verify
+      # only thing proving the quality gates still enforce. install rather than
+      # verify because the BOM below is a separate build that resolves this POM
+      # from the local repository.
+      - name: Build and verify the parent
+        run: ./mvnw -B --no-transfer-progress clean install
+
+      # bom/ is deliberately not a <module> of the parent: modules are inherited,
+      # so every external child would try to build a bom/ of its own. It is a
+      # second invocation instead, and it must come after the parent is installed.
+      - name: Build and verify the BOM
+        run: ./mvnw -B --no-transfer-progress -f bom/pom.xml clean install
 
       - name: Upload integration test logs
         if: failure()
         uses: actions/upload-artifact@v7
         with:
           name: it-logs-jdk${{ matrix.java }}
-          path: target/it/*/build.log
+          path: |
+            target/it/*/build.log
+            bom/target/it/*/build.log
           if-no-files-found: ignore

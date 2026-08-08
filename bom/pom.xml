@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+         child.project.url.inherit.append.path="false">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- Inherits the parent purely to avoid restating the licence, the SCM block,
+       the developer list and the signing and publishing setup. Nothing about
+       that inheritance reaches a consumer: an <import> takes this POM's
+       dependencyManagement and nothing else, never a <build> section. The
+       parent deliberately does NOT list this directory in <modules> — modules
+       are inherited, so every external child would try to build a bom/ of its
+       own. This is built as a second, separate invocation instead. -->
+  <parent>
+    <groupId>be.imgn.parent</groupId>
+    <artifactId>parent</artifactId>
+    <version>2026-09-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>bom</artifactId>
+  <packaging>pom</packaging>
+
+  <name>BOM</name>
+  <description>Shared library versions for all projects.</description>
+
+  <properties>
+    <!-- Every version is a property so a project that INHERITS the parent can
+         pin one library without forking the catalogue. A project that IMPORTS
+         this BOM cannot: import takes the resolved versions, and its own
+         properties do not override them. That difference is the whole reason
+         both artifacts exist. -->
+    <jackson.version>3.2.1</jackson.version>
+    <jdbi.version>3.54.0</jdbi.version>
+    <slf4j.version>2.0.18</slf4j.version>
+    <h2.version>2.4.240</h2.version>
+    <directories.version>26</directories.version>
+    <!-- No antlr4.version here on purpose. The runtime managed below and the
+         antlr4-maven-plugin in the parent's pluginManagement are a matched
+         pair, and a runtime that disagrees with the plugin that generated the
+         parser fails when the parser RUNS, not when it is built — a malfunction
+         rather than a build error. Rather than guard against the two numbers
+         drifting, there is only one number: ${antlr4.version} is defined in the
+         parent and inherited here. -->
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>tools.jackson</groupId>
+        <artifactId>jackson-bom</artifactId>
+        <version>${jackson.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jdbi</groupId>
+        <artifactId>jdbi3-bom</artifactId>
+        <version>${jdbi.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- The façade of choice is System.Logger, which needs no dependency at
+           all. This is here for the libraries that already require slf4j, JDBI
+           among them, so a project never has to pick the version itself. -->
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-bom</artifactId>
+        <version>${slf4j.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <version>${h2.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>dev.dirs</groupId>
+        <artifactId>directories</artifactId>
+        <version>${directories.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.antlr</groupId>
+        <artifactId>antlr4-runtime</artifactId>
+        <version>${antlr4.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <plugins>
+      <!-- Declared rather than inherited: the parent marks its invoker execution
+           inherited=false so that children do not re-run the parent's tests. The
+           BOM has tests of its own, and they can only run here — a project that
+           imports this POM needs it installed first, which is true during this
+           build and not during the parent's. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-invoker-plugin</artifactId>
+        <version>${maven-invoker-plugin.version}</version>
+        <configuration>
+          <projectsDirectory>src/it</projectsDirectory>
+          <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+          <showErrors>true</showErrors>
+          <streamLogs>false</streamLogs>
+        </configuration>
+        <executions>
+          <execution>
+            <id>integration-test</id>
+            <goals>
+              <goal>install</goal>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

@@ -72,19 +72,12 @@
     <jqwik.version>1.10.1</jqwik.version>
     <jspecify.version>1.0.1</jspecify.version>
 
-    <!-- Application library versions. These are a shared version catalogue, not
-         a statement that a project should use any of them: nothing here is on a
-         child's classpath until the child declares it, without a version. -->
-    <jackson.version>3.2.1</jackson.version>
-    <jdbi.version>3.54.0</jdbi.version>
-    <slf4j.version>2.0.18</slf4j.version>
-    <h2.version>2.4.240</h2.version>
-    <directories.version>26</directories.version>
-    <!-- One property drives both the generator and the runtime. They are a
-         matched pair: a runtime older or newer than the plugin that generated
-         the parser fails when the parser runs, not when it is built, so a drift
-         here surfaces as a malfunction rather than a build error. Managing one
-         without the other would be worse than managing neither. -->
+    <!-- Application library versions live in bom/pom.xml, which is published
+         separately as be.imgn.parent:bom and imported by a project that wants
+         them. Only the antlr number is here, because its other half is the
+         antlr4-maven-plugin in pluginManagement below and the two must match.
+         The BOM inherits this property rather than restating it, so there is
+         exactly one number and drift is impossible. -->
     <antlr4.version>4.13.2</antlr4.version>
 
     <!-- Tool versions -->
@@ -183,47 +176,6 @@
         <groupId>org.jspecify</groupId>
         <artifactId>jspecify</artifactId>
         <version>${jspecify.version}</version>
-      </dependency>
-
-      <!-- Application libraries. A child declares these without a <version>. -->
-      <dependency>
-        <groupId>tools.jackson</groupId>
-        <artifactId>jackson-bom</artifactId>
-        <version>${jackson.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.jdbi</groupId>
-        <artifactId>jdbi3-bom</artifactId>
-        <version>${jdbi.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <!-- The façade of choice here is System.Logger, which needs no dependency.
-           This is managed for the libraries that already require slf4j, JDBI
-           among them, so a child never has to pick the version itself. -->
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-bom</artifactId>
-        <version>${slf4j.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>com.h2database</groupId>
-        <artifactId>h2</artifactId>
-        <version>${h2.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>dev.dirs</groupId>
-        <artifactId>directories</artifactId>
-        <version>${directories.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.antlr</groupId>
-        <artifactId>antlr4-runtime</artifactId>
-        <version>${antlr4.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
