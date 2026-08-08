@@ -38,6 +38,20 @@
          Example: <errorprone.extra.args>-Xep:InvalidInlineTag:OFF</errorprone.extra.args> -->
     <errorprone.extra.args></errorprone.extra.args>
 
+    <!-- The javadoc counterpart, appended to <additionalOptions>, so a child can
+         register a custom tag without overriding the whole javadoc configuration
+         and losing doclint, failOnWarnings and the release wiring with it. Empty
+         adds no argument at all.
+         Example: <javadoc.extra.args>-tag mtg.rule:a:Rule:</javadoc.extra.args>
+         Note -tag registers a BLOCK tag, written @mtg.rule 702.6a. Registering
+         the name changes an inline {@mtg.rule 702.6a} from a loud error into a
+         silent deletion: doclint stops complaining, the build goes green, and
+         javadoc drops the text from the rendered page without a word. Errors
+         going to zero is therefore not evidence the tag renders — read the
+         generated HTML. An inline tag needs a Taglet, via -taglet and
+         -tagletpath, which this property also carries. -->
+    <javadoc.extra.args></javadoc.extra.args>
+
     <!-- Printing to stdout/stderr is a bug everywhere except in a command-line
          tool, where it is the whole point. Such a module sets this to OFF; a
          single main method can instead use @SuppressWarnings("SystemOut"). -->
@@ -444,6 +458,7 @@
             <doclint>all,-missing</doclint>
             <failOnWarnings>true</failOnWarnings>
             <notimestamp>true</notimestamp>
+            <additionalOptions>${javadoc.extra.args}</additionalOptions>
           </configuration>
         </plugin>
 
@@ -478,8 +493,16 @@
                   <requireJavaVersion>
                     <version>[${java.release},)</version>
                   </requireJavaVersion>
+                  <!-- Ranges, LATEST and RELEASE stay banned: they make a build
+                       depend on when it ran. A -SNAPSHOT sibling does not — it is
+                       how a multi-module project refers to itself between
+                       releases, and banning it means no such project can build at
+                       all. Shipping a release that depends on a snapshot is the
+                       real hazard, and requireReleaseDeps/requireReleaseVersion in
+                       the enforce-no-snapshots execution already cover it, at the
+                       only moment it matters. -->
                   <banDynamicVersions>
-                    <allowSnapshots>false</allowSnapshots>
+                    <allowSnapshots>true</allowSnapshots>
                   </banDynamicVersions>
                   <banDuplicatePomDependencyVersions/>
                   <bannedDependencies>

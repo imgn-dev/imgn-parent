@@ -111,6 +111,70 @@ Space-separate several. This exists so a child never has to override
 `<compilerArgs>`, which would silently discard the `add-exports` flags, the
 compile policy and NullAway along with it.
 
+## Registering a custom Javadoc tag
+
+Javadoc runs with `doclint` at `all,-missing` and `failOnWarnings`, so a tag the
+JDK does not know is an error. It does not break `verify`, only
+`attach-javadocs`, which means the project builds fine and then cannot be
+released. Override `javadoc.extra.args`, appended to `<additionalOptions>`:
+
+```xml
+<properties>
+  <javadoc.extra.args>-tag mtg.rule:a:Rule:</javadoc.extra.args>
+</properties>
+```
+
+`-tag` registers a **block** tag, written `@mtg.rule 702.6a`, which renders as
+its own `Rule:` section.
+
+Registering the name turns an *inline* `{@mtg.rule 702.6a}` from a loud error
+into a silent deletion. Doclint stops complaining, the build goes green, and
+javadoc drops the text from the rendered page without a word — the docs ship
+with every such reference missing. **Errors going to zero is not evidence the
+tag renders.** Read the generated HTML:
+
+```
+./mvnw javadoc:jar
+unzip -p target/*-javadoc.jar path/to/Type.html | grep -c 'Rule:'
+```
+
+The first project to hit this had 1313 inline references and 96 errors; the
+errors went to zero and all 1313 references silently vanished. An inline tag
+needs a `Taglet`; pass `-taglet` and `-tagletpath` through this same property.
+
+Same purpose as `errorprone.extra.args`: a child never has to override the
+javadoc configuration, which would discard `doclint`, `failOnWarnings` and the
+release wiring with it.
+
+## Suppressing a Checkstyle rule at one site
+
+`@SuppressWarnings("checkstyle:CyclomaticComplexity")` works on any element, for
+the cases where a rule measures something real but harmless — a flat switch
+dispatching one arm per grammar alternative scores high complexity because the
+grammar is large, not because the code is hard.
+
+Both halves are required for this to work, and the failure is silent: a
+`SuppressWarningsHolder` inside `TreeWalker` collects the annotations, and a
+`SuppressWarningsFilter` at `Checker` level consumes what it collected. With
+only the holder, every annotation is accepted and ignored. `2026-08-01` shipped
+that way; `src/it/checkstyle-suppresswarnings{,-absent}` is what keeps it fixed.
+
+## Snapshots, ranges and multi-module projects
+
+`banDynamicVersions` runs with `allowSnapshots=true`. A module depending on its
+`-SNAPSHOT` sibling is how a multi-module project refers to itself between
+releases; banning it means no such project can build at all. Ranges, `LATEST`
+and `RELEASE` are still rejected — they make a build depend on when it ran.
+
+Shipping a release that depends on a snapshot is the real hazard, and
+`requireReleaseDeps` / `requireReleaseVersion` catch it under `-PperformRelease`,
+which is the only moment it matters.
+
+Two more consequences of `reactorModuleConvergence`, both surprising the first
+time: every reactor module's parent must be the reactor root, so a standalone
+BOM module has to be folded into the root POM; and `mvn -pl <module>` fails
+unless `-am` is passed.
+
 ## Layout belongs to the formatter
 
 Checkstyle here deliberately carries no `Indentation` module, and
@@ -132,11 +196,17 @@ palantir emits is the house style.
 | `clean-project` | builds green |
 | `formatter-checkstyle-agreement` | builds green — empty records, marker interfaces and wrapped lambdas, with no suppressions |
 | `errorprone-extra-args` | builds green — a custom inline Javadoc tag, with the check switched off |
+| `checkstyle-suppresswarnings` | builds green — a 16-arm switch, complexity suppressed by annotation |
+| `visibilitymodifier-junit-fields` | builds green — package-private `@TempDir` and `@RegisterExtension` fields |
+| `snapshot-sibling` | builds green — a reactor module depending on its `-SNAPSHOT` sibling |
+| `javadoc-extra-args` | builds green — a custom block tag registered through the property |
 | `checkstyle-violation` | **fails** — magic number |
 | `nullaway-violation` | **fails** — null passed where non-null required |
 | `errorprone-extra-args-absent` | **fails** — same sources, without the property |
+| `checkstyle-suppresswarnings-absent` | **fails** — same switch, without the annotation |
+| `javadoc-extra-args-absent` | **fails** — same tag, without the property |
 
-The two failing projects are the point: if a gate ever stops enforcing, its
+The failing projects are the point: if a gate ever stops enforcing, its
 build succeeds, which does not match `invoker.buildResult = failure`, and the
 integration test fails. Nothing else in this repository proves the gates still
 bite.
