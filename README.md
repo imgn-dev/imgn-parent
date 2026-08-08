@@ -522,10 +522,17 @@ Manual, via the **Release** workflow in GitHub Actions. It takes the release
 version and the next development version, then sets both, verifies, publishes,
 tags and pushes.
 
+**Two artifacts go out, so there are two of everything.** The workflow deploys
+the parent and then the BOM as separate invocations, and they arrive in the
+Central portal as **two deployments**. Both must be published — releasing only
+the parent leaves every project that imports the BOM unable to resolve its
+library versions.
+
 Locally the equivalent is:
 
 ```bash
 ./mvnw -Prelease deploy
+./mvnw -f bom/pom.xml -Prelease deploy
 ```
 
 The `release` profile attaches sources and javadoc, signs with GPG, publishes

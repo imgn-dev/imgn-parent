@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 #
-# Walks through publishing be.imgn.parent:parent to Maven Central.
+# Walks through publishing be.imgn.parent to Maven Central.
+#
+# Two artifacts go out, built as two separate Maven invocations because the
+# parent cannot aggregate the BOM (<modules> is inherited, so every external
+# child would try to build a bom/ of its own):
+#
+#   be.imgn.parent:parent   the parent POM, plus its classified config jar
+#   be.imgn.parent:bom      the library version catalogue
+#
+# They arrive in the portal as TWO deployments. Both must be published, or a
+# project that inherits the parent and imports the BOM gets half a release.
 #
 # Safe to re-run: every step detects what is already done and skips it. Nothing
 # becomes public until you press Publish in the Central portal, which this
@@ -292,6 +302,8 @@ run_release() {
     bold '6. Release'
     info "Release version : $RELEASE_VERSION"
     info "Next version    : $NEXT_VERSION-SNAPSHOT"
+    info "Artifacts       : be.imgn.parent:parent  (POM + config jar)"
+    info "                  be.imgn.parent:bom     (version catalogue)"
     info 'This publishes signed artifacts to Central, tags the commit and pushes.'
     info 'Nothing becomes public until you press Publish in the portal.'
     confirm 'Start the release workflow?'
@@ -313,7 +325,12 @@ run_release() {
     ok "watching run $id"
     if gh run watch "$id" --repo "$REPO" --exit-status --interval 15; then
         bold 'Published to the staging area'
-        info "Open $PORTAL and press Publish."
+        info "Open $PORTAL"
+        info 'Expect TWO deployments, not one:'
+        info "  be.imgn.parent:parent:$RELEASE_VERSION   pom, config jar, sources, javadoc"
+        info "  be.imgn.parent:bom:$RELEASE_VERSION      pom only"
+        info 'Publish both. Releasing only the parent leaves every project that'
+        info 'imports the BOM unable to resolve its library versions.'
         info 'Inspect the uploaded files first — that button is the point of no return.'
     else
         die "Run $id failed. Inspect it with: gh run view $id --repo $REPO --log-failed"
