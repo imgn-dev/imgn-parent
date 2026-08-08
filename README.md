@@ -68,6 +68,38 @@ POM declaring Apache-2.0, this POM's licence. A project that is proprietary or
 licensed differently must declare its own `<licenses>` block — silence means
 agreement here.
 
+## Managed dependency versions
+
+A shared version catalogue. Declare any of these **without a `<version>`** and
+the parent supplies it:
+
+| | |
+|---|---|
+| Testing | `junit-bom`, `assertj-bom`, `archunit-junit6`, `jqwik` |
+| Annotations | `jspecify`, `error_prone_annotations` |
+| JSON | `jackson-bom` (Jackson 3, `tools.jackson`) |
+| Database | `jdbi3-bom`, `h2` |
+| Parsing | `antlr4-runtime` |
+| Logging | `slf4j-bom` |
+| Platform | `directories` |
+
+Nothing here is on a classpath until a child declares it. Managing a version is
+not a recommendation to use the library — it only means that if you do, you do
+not pick the number.
+
+`error_prone_annotations` is the one worth knowing about: libraries compiled
+against it (JDBI, anything Guava-adjacent) make javac emit *"Cannot find
+annotation method `value()` in type `GuardedBy`"*, which `-Werror` turns fatal.
+Declaring it with no version fixes that.
+
+**ANTLR is a matched pair.** `antlr4-runtime` and `antlr4-maven-plugin` both come
+from `${antlr4.version}`. A runtime that disagrees with the generator fails when
+the parser *runs*, not when it is built, so the symptom is a malfunction rather
+than a build error. Declare the plugin with no `<version>`; never pin one half.
+
+`src/it/managed-library-versions` declares every one of these with no version,
+so a dropped entry fails here rather than in a consumer.
+
 ## Quality gates
 
 Every child gets these without declaring anything:
@@ -204,6 +236,7 @@ palantir emits is the house style.
 | `nullaway-violation` | **fails** — null passed where non-null required |
 | `errorprone-extra-args-absent` | **fails** — same sources, without the property |
 | `checkstyle-suppresswarnings-absent` | **fails** — same switch, without the annotation |
+| `managed-library-versions` | builds green — six libraries declared with no `<version>` |
 | `javadoc-extra-args-absent` | **fails** — same tag, without the property |
 
 The failing projects are the point: if a gate ever stops enforcing, its
