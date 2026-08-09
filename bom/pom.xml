@@ -37,6 +37,15 @@
     <slf4j.version>2.0.18</slf4j.version>
     <h2.version>2.4.240</h2.version>
     <directories.version>26</directories.version>
+    <!-- Palantir's fork. The original com.squareup:javapoet is unmaintained and
+         does not know about records or sealed types. -->
+    <javapoet.version>0.18.0</javapoet.version>
+    <!-- Mockito needs one line of build configuration in the module that uses
+         it, not just this version. See "Mockito needs a Java agent" in the
+         README: from JDK 26 it warns that self-attachment is going away, and
+         the fix belongs in the consuming module because it collides with
+         JaCoCo. -->
+    <mockito.version>5.23.0</mockito.version>
     <!-- No antlr4.version here on purpose. The runtime managed below and the
          antlr4-maven-plugin in the parent's pluginManagement are a matched
          pair, and a runtime that disagrees with the plugin that generated the
@@ -86,6 +95,18 @@
         <groupId>org.antlr</groupId>
         <artifactId>antlr4-runtime</artifactId>
         <version>${antlr4.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.palantir.javapoet</groupId>
+        <artifactId>javapoet</artifactId>
+        <version>${javapoet.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-bom</artifactId>
+        <version>${mockito.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>

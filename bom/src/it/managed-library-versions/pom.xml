@@ -51,8 +51,17 @@
       <artifactId>directories</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.palantir.javapoet</groupId>
+      <artifactId>javapoet</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -66,5 +75,39 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <!-- The Mockito agent recipe from the README, exercised for real. Without it
+       the JDK prints "Mockito is currently self-attaching to enable the
+       inline-mock-maker. This will no longer work in future releases of the
+       JDK." dependency:properties defines ${org.mockito:mockito-core:jar};
+       surefire resolves it late, at fork time.
+
+       Deliberately NOT @{argLine}: this project has no JaCoCo, and surefire
+       passes an unresolved @{argLine} to the JVM verbatim, which dies with
+       "Error: could not open '{argLine}'". A module WITH JaCoCo must write
+       @{argLine} first or it silently loses coverage. -->
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>mockito-agent-path</id>
+            <goals>
+              <goal>properties</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>-javaagent:${org.mockito:mockito-core:jar}</argLine>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>

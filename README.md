@@ -106,8 +106,15 @@ gates, and the few versions those gates depend on:
 | JSON | `jackson-bom` (Jackson 3, `tools.jackson`) |
 | Database | `jdbi3-bom`, `h2` |
 | Parsing | `antlr4-runtime` |
+| Codegen | `javapoet` (Palantir's fork, `com.palantir.javapoet`) |
+| Mocking | `mockito-bom` — [needs a Java agent](#mockito-needs-a-java-agent) |
 | Logging | `slf4j-bom` |
 | Platform | `directories` |
+
+JavaPoet is Palantir's fork. The original `com.squareup:javapoet` is
+unmaintained and knows nothing about records or sealed types; the coordinates
+are different, so both can be on a classpath at once — check which one an
+import actually refers to.
 
 Then declare what you use **without a `<version>`**. Nothing is on a classpath
 until you declare it: managing a version is not a recommendation to use the
@@ -141,6 +148,71 @@ plugin with no `<version>` and never pin either half yourself.
 `bom/src/it/managed-library-versions` consumes both the way a real project does —
 inherit the parent, import the BOM — and declares six libraries with no version,
 so a dropped entry fails there rather than in a consumer.
+
+### Mockito needs a Java agent
+
+The BOM manages the version. It cannot manage the rest, and the rest is not
+optional — **this configuration belongs in the module that uses Mockito**, not
+here. Without it, JDK 26 prints:
+
+```
+Mockito is currently self-attaching to enable the inline-mock-maker.
+This will no longer work in future releases of the JDK.
+WARNING: A Java agent has been loaded dynamically (byte-buddy-agent.jar)
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+```
+
+Tests still pass today. They will stop passing. The fix:
+
+```xml
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-dependency-plugin</artifactId>
+  <executions>
+    <execution>
+      <id>mockito-agent-path</id>
+      <goals><goal>properties</goal></goals>
+    </execution>
+  </executions>
+</plugin>
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-surefire-plugin</artifactId>
+  <configuration>
+    <argLine>-javaagent:${org.mockito:mockito-core:jar}</argLine>
+  </configuration>
+</plugin>
+```
+
+`dependency:properties` defines `${org.mockito:mockito-core:jar}`; surefire
+resolves it late, when it forks.
+
+**Why the parent does not do this for you.** Two reasons, both verified:
+
+- An `<argLine>` in the parent would apply to every module, including those
+  with no Mockito, where `${org.mockito:mockito-core:jar}` never gets defined
+  and the fork dies on a literal `${...}`.
+- Setting `<argLine>` at all *silently discards* JaCoCo's agent, because an
+  explicit configuration value beats the `argLine` property JaCoCo injects.
+  The usual answer is `@{argLine}` — but with no JaCoCo present, surefire
+  passes it through verbatim and the JVM dies with
+  `Error: could not open '{argLine}'`. There is no single value that is correct
+  for both kinds of module, so the parent sets none.
+
+**If your module also has JaCoCo**, write `@{argLine}` first:
+
+```xml
+<argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
+```
+
+Two Error Prone checks bite in Mockito tests, both correctly:
+`mock(List.class)` returns a raw `List` and the unchecked conversion is fatal
+under `-Werror` — mock a non-generic type or suppress at the site; and
+`DirectInvocationOnMock` rejects asserting straight on a mock, so call it
+through the code under test.
+
+`bom/src/it/managed-library-versions` runs this exact configuration, so the
+recipe is tested rather than merely described.
 
 ### Why `bom/` is not a `<module>`
 
