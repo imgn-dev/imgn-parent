@@ -73,9 +73,12 @@ jobs:
           ./mvnw -B --no-transfer-progress versions:set-property \
             -Dproperty=imgn.config.version \
             -DnewVersion='${{ inputs.releaseVersion }}' -DgenerateBackupPoms=false
-          # The BOM has no <version> of its own — it inherits one — so its parent
-          # reference is the only string to change. skipResolution because the
+          # The BOM restates its own version and its parent's, because Central's
+          # validator reads the deployed .pom standalone and never resolves the
+          # parent. Both strings have to move. skipResolution because the
           # version being pointed at is the one this run is about to publish.
+          ./mvnw -B --no-transfer-progress -f bom/pom.xml versions:set \
+            -DnewVersion='${{ inputs.releaseVersion }}' -DgenerateBackupPoms=false
           ./mvnw -B --no-transfer-progress -f bom/pom.xml versions:update-parent \
             -DparentVersion='${{ inputs.releaseVersion }}' \
             -DskipResolution=true -DgenerateBackupPoms=false
@@ -128,6 +131,8 @@ jobs:
             -DnewVersion="$next" -DgenerateBackupPoms=false
           ./mvnw -B --no-transfer-progress versions:set-property \
             -Dproperty=imgn.config.version \
+            -DnewVersion="$next" -DgenerateBackupPoms=false
+          ./mvnw -B --no-transfer-progress -f bom/pom.xml versions:set \
             -DnewVersion="$next" -DgenerateBackupPoms=false
           ./mvnw -B --no-transfer-progress -f bom/pom.xml versions:update-parent \
             -DparentVersion="$next" -DskipResolution=true -DgenerateBackupPoms=false

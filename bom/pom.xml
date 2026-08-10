@@ -20,11 +20,49 @@
     <relativePath>../pom.xml</relativePath>
   </parent>
 
+  <!-- groupId and version are inherited by Maven, but restated here anyway, and
+       so are the licence, developer and SCM blocks below. Maven resolves all of
+       them through the <parent> above; Maven Central does not. Its validator
+       reads the deployed .pom as a standalone file and never resolves the
+       parent, so an inheriting POM is rejected with:
+
+         Failed to get coordinates from pom file .../bom-<version>.pom
+         License information is missing
+         Developers information is missing
+
+       Nothing below may be deleted as redundant. It is redundant to Maven and
+       required by Central. -->
+  <groupId>be.imgn.parent</groupId>
   <artifactId>bom</artifactId>
+  <version>2026-09-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>BOM</name>
   <description>Shared library versions for all projects.</description>
+  <url>https://github.com/imgn-dev/imgn-parent</url>
+  <inceptionYear>2026</inceptionYear>
+
+  <licenses>
+    <license>
+      <name>The Apache License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>imgn-dev</id>
+      <name>The IMGN developers</name>
+      <url>https://github.com/imgn-dev</url>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:https://github.com/imgn-dev/imgn-parent.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/imgn-dev/imgn-parent.git</developerConnection>
+    <url>https://github.com/imgn-dev/imgn-parent</url>
+  </scm>
 
   <properties>
     <!-- Every version is a property so a project that INHERITS the parent can

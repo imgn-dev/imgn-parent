@@ -225,9 +225,27 @@ two are separate Maven invocations, parent first:
 ./mvnw -f bom/pom.xml clean install
 ```
 
-The BOM inherits the parent — for the licence, SCM, developer and signing blocks
-only, so none of it is restated. That inheritance never reaches a consumer: an
-`<import>` takes `dependencyManagement` and nothing else.
+The BOM inherits the parent for its plugin and signing configuration. That
+inheritance never reaches a consumer: an `<import>` takes `dependencyManagement`
+and nothing else.
+
+**It restates its own `groupId`, `version`, `licenses`, `developers` and `scm`
+anyway, and that duplication must not be tidied away.** Maven resolves those
+through the parent; Maven Central does not. Its validator reads each deployed
+`.pom` as a standalone file and never resolves the parent, so a BOM that
+inherits them is rejected:
+
+```
+- Failed to get coordinates from pom file .../bom-<version>.pom
+- License information is missing
+- Developers information is missing
+```
+
+The deployment fails *after* upload, at validation — so the release workflow gets
+all the way to publishing before anything complains, and the parent half of the
+release is already staged and valid by then. Because the BOM carries its own
+`<version>`, the release workflow bumps two strings for it: `versions:set` for
+its version and `versions:update-parent` for the parent reference.
 
 ## Quality gates
 
