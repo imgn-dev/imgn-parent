@@ -81,7 +81,7 @@
     <antlr4.version>4.13.2</antlr4.version>
 
     <!-- Tool versions -->
-    <checkstyle.version>13.9.0</checkstyle.version>
+    <checkstyle.version>13.10.0</checkstyle.version>
     <errorprone.version>2.50.0</errorprone.version>
     <nullaway.version>0.13.8</nullaway.version>
     <palantir-java-format.version>2.96.0</palantir-java-format.version>
