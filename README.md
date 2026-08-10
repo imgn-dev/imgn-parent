@@ -618,6 +618,15 @@ Central portal as **two deployments**. Both must be published — releasing only
 the parent leaves every project that imports the BOM unable to resolve its
 library versions.
 
+**The version bump does the BOM first, and that order is load-bearing.** Four
+strings move: the parent's version and `imgn.config.version`, and the BOM's own
+version and its parent reference. Every `-f bom/pom.xml` command has to build
+the BOM's model, which means resolving its parent through `relativePath`. Bump
+the parent first and the two files disagree, so Maven reports *"parent
+.relativePath points at wrong local POM"*, falls back to the repository, and
+looks for a SNAPSHOT that was never published. A developer machine has it cached
+and succeeds; a clean runner does not, and the release dies at that step.
+
 Locally the equivalent is:
 
 ```bash

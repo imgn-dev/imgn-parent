@@ -66,22 +66,33 @@ jobs:
       # release:prepare is deliberately not used: it rewrites <version> but not
       # imgn.config.version, and the non-inherited enforcer rule would then fail
       # the release. Both are set explicitly instead.
+      # ORDER MATTERS, and getting it wrong fails only on a clean machine.
+      #
+      # The BOM restates its own version AND its parent's, because Central's
+      # validator reads each deployed .pom standalone and never resolves the
+      # parent. So four strings move, and every `-f bom/pom.xml` invocation has
+      # to build the BOM's model first, which means resolving its parent.
+      #
+      # Bump the BOM FIRST, while bom/pom.xml still names the version that
+      # pom.xml on disk still has, so relativePath resolves it. Touch the parent
+      # first and the two disagree: Maven reports "parent.relativePath points at
+      # wrong local POM", falls back to the repository, and looks for a SNAPSHOT
+      # that was never published. A developer machine has it cached and succeeds;
+      # a fresh runner does not and the release dies here.
       - name: Set release version
         run: |
+          ./mvnw -B --no-transfer-progress -f bom/pom.xml versions:set \
+            -DnewVersion='${{ inputs.releaseVersion }}' -DgenerateBackupPoms=false
+          # skipResolution: the version being pointed at is the one this run is
+          # about to publish, so it cannot be resolved yet.
+          ./mvnw -B --no-transfer-progress -f bom/pom.xml versions:update-parent \
+            -DparentVersion='${{ inputs.releaseVersion }}' \
+            -DskipResolution=true -DgenerateBackupPoms=false
           ./mvnw -B --no-transfer-progress versions:set \
             -DnewVersion='${{ inputs.releaseVersion }}' -DgenerateBackupPoms=false
           ./mvnw -B --no-transfer-progress versions:set-property \
             -Dproperty=imgn.config.version \
             -DnewVersion='${{ inputs.releaseVersion }}' -DgenerateBackupPoms=false
-          # The BOM restates its own version and its parent's, because Central's
-          # validator reads the deployed .pom standalone and never resolves the
-          # parent. Both strings have to move. skipResolution because the
-          # version being pointed at is the one this run is about to publish.
-          ./mvnw -B --no-transfer-progress -f bom/pom.xml versions:set \
-            -DnewVersion='${{ inputs.releaseVersion }}' -DgenerateBackupPoms=false
-          ./mvnw -B --no-transfer-progress -f bom/pom.xml versions:update-parent \
-            -DparentVersion='${{ inputs.releaseVersion }}' \
-            -DskipResolution=true -DgenerateBackupPoms=false
 
       # install, not verify: the BOM is a separate build that resolves the parent
       # from the local repository.
@@ -126,16 +137,17 @@ jobs:
 
       - name: Start the next development version
         run: |
+          # BOM first, for the same reason as the release bump above.
           next='${{ inputs.nextVersion }}-SNAPSHOT'
+          ./mvnw -B --no-transfer-progress -f bom/pom.xml versions:set \
+            -DnewVersion="$next" -DgenerateBackupPoms=false
+          ./mvnw -B --no-transfer-progress -f bom/pom.xml versions:update-parent \
+            -DparentVersion="$next" -DskipResolution=true -DgenerateBackupPoms=false
           ./mvnw -B --no-transfer-progress versions:set \
             -DnewVersion="$next" -DgenerateBackupPoms=false
           ./mvnw -B --no-transfer-progress versions:set-property \
             -Dproperty=imgn.config.version \
             -DnewVersion="$next" -DgenerateBackupPoms=false
-          ./mvnw -B --no-transfer-progress -f bom/pom.xml versions:set \
-            -DnewVersion="$next" -DgenerateBackupPoms=false
-          ./mvnw -B --no-transfer-progress -f bom/pom.xml versions:update-parent \
-            -DparentVersion="$next" -DskipResolution=true -DgenerateBackupPoms=false
           git commit -am "Start $next"
           git push origin HEAD --follow-tags
 
