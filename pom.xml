@@ -10,7 +10,7 @@
 
   <groupId>be.imgn.parent</groupId>
   <artifactId>parent</artifactId>
-  <version>2026-08-02</version>
+  <version>2026-09-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Parent</name>
@@ -22,7 +22,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <!-- Reproducible builds: bump on each release. -->
-    <project.build.outputTimestamp>2026-08-10T11:38:12Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-08-10T11:40:31Z</project.build.outputTimestamp>
 
     <java.release>25</java.release>
     <minimum.maven.version>3.9.16</minimum.maven.version>
@@ -63,7 +63,7 @@
          against the *child*, which would make every child look for a config jar
          under its own version. Bump on release; the enforcer rule below fails the
          build here if the two drift apart. -->
-    <imgn.config.version>2026-08-02</imgn.config.version>
+    <imgn.config.version>2026-09-SNAPSHOT</imgn.config.version>
 
     <!-- Dependency versions -->
     <junit.version>6.1.3</junit.version>
