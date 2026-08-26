@@ -83,7 +83,7 @@
     <!-- Tool versions -->
     <checkstyle.version>13.10.0</checkstyle.version>
     <errorprone.version>2.50.0</errorprone.version>
-    <nullaway.version>0.13.8</nullaway.version>
+    <nullaway.version>0.14.0</nullaway.version>
     <palantir-java-format.version>2.96.0</palantir-java-format.version>
 
     <!-- Plugin versions -->
