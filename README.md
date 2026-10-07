@@ -82,7 +82,7 @@ gates, and the few versions those gates depend on:
 
 | | |
 |---|---|
-| Testing | `junit-bom`, `assertj-bom`, `archunit-junit6`, `jqwik` |
+| Testing | `junit-bom`, `assertj-bom`, `archunit-junit6` |
 | Annotations | `jspecify`, `error_prone_annotations` |
 
 **`be.imgn.parent:bom`** — the library catalogue. Opt in with an `<import>`:
