@@ -70,20 +70,20 @@
          this BOM cannot: import takes the resolved versions, and its own
          properties do not override them. That difference is the whole reason
          both artifacts exist. -->
-    <jackson.version>3.2.1</jackson.version>
-    <jdbi.version>3.54.0</jdbi.version>
-    <slf4j.version>2.0.18</slf4j.version>
-    <h2.version>2.4.240</h2.version>
+    <jackson.version>3.2.3</jackson.version>
+    <jdbi.version>3.55.0</jdbi.version>
+    <slf4j.version>2.0.20</slf4j.version>
+    <h2.version>2.5.252</h2.version>
     <directories.version>26</directories.version>
     <!-- Palantir's fork. The original com.squareup:javapoet is unmaintained and
          does not know about records or sealed types. -->
-    <javapoet.version>0.18.0</javapoet.version>
+    <javapoet.version>0.20.0</javapoet.version>
     <!-- Mockito needs one line of build configuration in the module that uses
          it, not just this version. See "Mockito needs a Java agent" in the
          README: from JDK 26 it warns that self-attachment is going away, and
          the fix belongs in the consuming module because it collides with
          JaCoCo. -->
-    <mockito.version>5.23.0</mockito.version>
+    <mockito.version>5.24.0</mockito.version>
     <!-- No antlr4.version here on purpose. The runtime managed below and the
          antlr4-maven-plugin in the parent's pluginManagement are a matched
          pair, and a runtime that disagrees with the plugin that generated the
