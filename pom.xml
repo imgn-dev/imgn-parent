@@ -75,8 +75,8 @@
          separately as be.imgn.parent:bom and imported by a project that wants
          them. Only the antlr number is here, because its other half is the
          antlr4-maven-plugin in pluginManagement below and the two must match.
-         The BOM inherits this property rather than restating it, so there is
-         exactly one number and drift is impossible. -->
+         bom/pom.xml restates it, because the BOM must not inherit this POM;
+         bom/src/it/managed-library-versions fails if the two numbers differ. -->
     <antlr4.version>4.13.2</antlr4.version>
 
     <!-- Tool versions -->

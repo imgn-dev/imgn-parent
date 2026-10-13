@@ -1,13 +1,14 @@
 # imgn parent
 
-Shared Maven build configuration for all `be.imgn` projects. Two artifacts,
-published as three files:
+Shared Maven build configuration for all `be.imgn` projects. Three artifacts,
+published as four files:
 
 | File | What it is |
 |---|---|
 | `be.imgn.parent:parent:pom` | The parent POM: plugin versions, quality gates, release setup. Inherit it. |
 | `be.imgn.parent:parent:jar:config` | A classified jar built from this repo's `src/main/resources`, carrying `checkstyle.xml` and `checkstyle-suppressions.xml` on the plugin classpath. |
 | `be.imgn.parent:bom:pom` | The library version catalogue. Import it. |
+| `be.imgn.parent:bom-parent:pom` | Build and publishing setup for a BOM, managing no dependencies. Inherit it from a BOM. |
 
 A `pom`-packaged artifact cannot carry classpath resources, so the rulesets ride
 along as a *classified attachment* to the parent's coordinates rather than as a
@@ -140,14 +141,18 @@ because `-Werror` is a gate, not a library choice.
 
 **ANTLR is a matched pair.** A runtime that disagrees with the generator fails
 when the parser *runs*, not when it is built, so the symptom is a malfunction
-rather than a build error. `${antlr4.version}` is defined once in the parent and
-inherited by the BOM, so there is one number and drift is impossible: the BOM
-manages `antlr4-runtime`, the parent manages `antlr4-maven-plugin`. Declare the
-plugin with no `<version>` and never pin either half yourself.
+rather than a build error. The BOM manages `antlr4-runtime`, the parent manages
+`antlr4-maven-plugin`, and each states `${antlr4.version}` itself, because the
+BOM must not inherit the parent. `managed-library-versions` fails the BOM's
+build if the two numbers differ. Declare the plugin with no `<version>` and
+never pin either half yourself.
 
 `bom/src/it/managed-library-versions` consumes both the way a real project does —
 inherit the parent, import the BOM — and declares six libraries with no version,
-so a dropped entry fails there rather than in a consumer.
+so a dropped entry fails there rather than in a consumer. Next to it,
+`import-does-not-leak` imports the BOM *without* the parent and asks for JUnit
+with no version, which must fail; `import-only` is its control, the same
+project asking for a library the BOM does manage.
 
 ### Mockito needs a Java agent
 
@@ -216,18 +221,22 @@ recipe is tested rather than merely described.
 
 ### Why `bom/` is not a `<module>`
 
-`<modules>` is inherited. If this POM aggregated `bom/`, every external child
-would inherit that list and try to build a `bom/` directory of its own. So the
-two are separate Maven invocations, parent first:
+`<modules>` is inherited. If this POM aggregated `bom/` and `bom-parent/`, every
+external child would inherit that list and try to build those directories of
+its own. So the three are separate Maven invocations, in this order:
 
 ```
 ./mvnw clean install
+./mvnw -f bom-parent/pom.xml clean install
 ./mvnw -f bom/pom.xml clean install
 ```
 
-The BOM inherits the parent for its plugin and signing configuration. That
-inheritance never reaches a consumer: an `<import>` takes `dependencyManagement`
-and nothing else.
+**The BOM inherits `bom-parent`, never the parent.** An `<import>` takes the
+imported POM's *effective* `dependencyManagement`, inherited entries included.
+A BOM inheriting the parent would hand every importer the parent's JUnit,
+AssertJ, ArchUnit, JSpecify and error_prone versions along with its own; up to
+2026-10-07 this one did. `bom-parent` carries the plugin versions, enforcer
+rules, signing and publishing setup, and manages nothing.
 
 **It restates its own `groupId`, `version`, `licenses`, `developers` and `scm`
 anyway, and that duplication must not be tidied away.** Maven resolves those
@@ -246,6 +255,32 @@ all the way to publishing before anything complains, and the parent half of the
 release is already staged and valid by then. Because the BOM carries its own
 `<version>`, the release workflow bumps two strings for it: `versions:set` for
 its version and `versions:update-parent` for the parent reference.
+
+## Publishing a BOM of your own
+
+A project that publishes a BOM should give it `be.imgn.parent:bom-parent` as
+its parent, not `be.imgn.parent:parent` and not the project's own root, which
+inherits the parent. Either of those would leak the parent's dependency
+management to everyone who imports the BOM.
+
+```xml
+<parent>
+  <groupId>be.imgn.parent</groupId>
+  <artifactId>bom-parent</artifactId>
+  <version>…</version>
+  <relativePath/>
+</parent>
+```
+
+That BOM can stay a module of the project's reactor: the parent does not
+enforce `reactorModuleConvergence`, so a module whose parent is not the reactor
+root is allowed. It brings plugin versions, the enforcer rules that apply to a
+POM with no code, and a `release` profile that signs and publishes to Central,
+activated by the same `-Prelease` as the rest of the reactor.
+
+What it cannot save is the metadata. Central reads each `.pom` on its own (see
+above), so the BOM still restates its `groupId`, `version`, `name`,
+`description`, `url`, `licenses`, `developers` and `scm`.
 
 ## Quality gates
 
@@ -345,11 +380,11 @@ Shipping a release that depends on a snapshot is the real hazard, and
 which is the only moment it matters.
 
 `reactorModuleConvergence` is deliberately absent. It requires every reactor
-module's parent to be the reactor root, which rules out a BOM module that does
-not inherit this parent, the layout a project publishing a BOM needs. Under
-CI-friendly `${revision}` every inheriting module shares one version anyway,
-and `dependencyConvergence` and `requireUpperBoundDeps` still catch real
-convergence problems.
+module's parent to be the reactor root, which rules out the one layout a
+project publishing a BOM needs: a BOM module that does not inherit this parent
+(see "Publishing a BOM of your own"). Under CI-friendly `${revision}` every
+inheriting module shares one version anyway, and `dependencyConvergence` and
+`requireUpperBoundDeps` still catch real convergence problems.
 
 ## Layout belongs to the formatter
 
@@ -589,6 +624,10 @@ mvn versions:display-plugin-updates
 mvn versions:display-property-updates
 ```
 
+Run them again with `-f bom-parent/pom.xml` and `-f bom/pom.xml`: neither is a
+module, and `bom-parent` repeats the parent's plugin versions, which must be
+bumped together.
+
 Error Prone, NullAway and Palantir Java Format are invisible to those goals —
 the first two live in `annotationProcessorPaths`, the third is inline in the
 Spotless configuration. Check them against Maven Central directly.
@@ -609,17 +648,19 @@ Manual, via the **Release** workflow in GitHub Actions. It takes the release
 version and the next development version, then sets both, verifies, publishes,
 tags and pushes.
 
-**Two artifacts go out, so there are two of everything.** The workflow deploys
-the parent and then the BOM as separate invocations, and they arrive in the
-Central portal as **two deployments**. Both must be published — releasing only
-the parent leaves every project that imports the BOM unable to resolve its
-library versions.
+**Three artifacts go out, so there are three of everything.** The workflow
+deploys the parent, `bom-parent` and the BOM as separate invocations, and they
+arrive in the Central portal as **three deployments**. All three must be
+published. Releasing only the parent leaves every project that imports the BOM
+unable to resolve its library versions, and the BOM is unresolvable without
+`bom-parent`.
 
-**The version bump does the BOM first, and that order is load-bearing.** Four
-strings move: the parent's version and `imgn.config.version`, and the BOM's own
-version and its parent reference. Every `-f bom/pom.xml` command has to build
-the BOM's model, which means resolving its parent through `relativePath`. Bump
-the parent first and the two files disagree, so Maven reports *"parent
+**The version bump does the BOM first, and that order is load-bearing.** Five
+strings move: the parent's version and `imgn.config.version`, `bom-parent`'s
+version, and the BOM's own version and its parent reference. Every
+`-f bom/pom.xml` command has to build the BOM's model, which means resolving
+`bom-parent` through `relativePath`. Bump `bom-parent` first and the two files
+disagree, so Maven reports *"parent
 .relativePath points at wrong local POM"*, falls back to the repository, and
 looks for a SNAPSHOT that was never published. A developer machine has it cached
 and succeeds; a clean runner does not, and the release dies at that step.
@@ -628,6 +669,7 @@ Locally the equivalent is:
 
 ```bash
 ./mvnw -Prelease deploy
+./mvnw -f bom-parent/pom.xml -Prelease deploy
 ./mvnw -f bom/pom.xml -Prelease deploy
 ```
 

@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- child.project.url.inherit.append.path: otherwise Maven appends each child's
+     artifactId to the inherited <url>, which is never what you want here. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"
+         child.project.url.inherit.append.path="false">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- The parent for a BOM. A BOM cannot inherit be.imgn.parent:parent: an
+       <import> takes the imported POM's EFFECTIVE dependencyManagement, inherited
+       entries included, so every project importing such a BOM would also get
+       the parent's JUnit, AssertJ, ArchUnit, JSpecify and error_prone versions.
+
+       This POM therefore carries everything a BOM needs to build and publish —
+       plugin versions, a few enforcer rules, signing and Central publishing —
+       and must NEVER gain a <dependencyManagement> or <dependencies> section.
+       Anything added there reaches every project that imports a BOM built on
+       this one.
+
+       No <parent> either, for the same reason, and it is built as its own
+       invocation, like bom/. -->
+  <groupId>be.imgn.parent</groupId>
+  <artifactId>bom-parent</artifactId>
+  <version>2026-11-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <name>BOM parent</name>
+  <description>Build and publishing setup for BOMs, with no managed dependencies.</description>
+  <url>https://github.com/imgn-dev/imgn-parent</url>
+  <inceptionYear>2026</inceptionYear>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <!-- Reproducible builds: bump on each release. -->
+    <project.build.outputTimestamp>2026-10-07T11:41:40Z</project.build.outputTimestamp>
+
+    <minimum.maven.version>3.9.16</minimum.maven.version>
+
+    <!-- The same numbers as in ../pom.xml. Bump them together. -->
+    <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
+    <maven-install-plugin.version>3.2.0</maven-install-plugin.version>
+    <maven-deploy-plugin.version>3.2.0</maven-deploy-plugin.version>
+    <maven-site-plugin.version>3.22.0</maven-site-plugin.version>
+    <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
+    <maven-enforcer-plugin.version>3.6.3</maven-enforcer-plugin.version>
+    <maven-invoker-plugin.version>3.10.1</maven-invoker-plugin.version>
+    <versions-maven-plugin.version>2.22.0</versions-maven-plugin.version>
+    <central-publishing-maven-plugin.version>0.11.0</central-publishing-maven-plugin.version>
+  </properties>
+
+  <licenses>
+    <license>
+      <name>The Apache License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>imgn-dev</id>
+      <name>The IMGN developers</name>
+      <url>https://github.com/imgn-dev</url>
+    </developer>
+  </developers>
+
+  <scm child.scm.connection.inherit.append.path="false"
+       child.scm.developerConnection.inherit.append.path="false"
+       child.scm.url.inherit.append.path="false">
+    <connection>scm:git:https://github.com/imgn-dev/imgn-parent.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/imgn-dev/imgn-parent.git</developerConnection>
+    <url>https://github.com/imgn-dev/imgn-parent</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+      </plugin>
+    </plugins>
+
+    <pluginManagement>
+      <plugins>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>${maven-clean-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-install-plugin</artifactId>
+          <version>${maven-install-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>${maven-deploy-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>${maven-site-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-invoker-plugin</artifactId>
+          <version>${maven-invoker-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-gpg-plugin</artifactId>
+          <version>${maven-gpg-plugin.version}</version>
+          <configuration>
+            <gpgArguments>
+              <arg>--pinentry-mode</arg>
+              <arg>loopback</arg>
+            </gpgArguments>
+          </configuration>
+        </plugin>
+
+        <!-- The subset of the parent's rules that means something for a POM with
+             no code. dependencyConvergence and requireUpperBoundDeps are left
+             out: a BOM has no dependencies of its own to converge. -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>${maven-enforcer-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>enforce-build-rules</id>
+              <phase>validate</phase>
+              <goals>
+                <goal>enforce</goal>
+              </goals>
+              <configuration>
+                <rules>
+                  <requireMavenVersion>
+                    <version>[${minimum.maven.version},)</version>
+                  </requireMavenVersion>
+                  <!-- A -SNAPSHOT sibling is allowed: a BOM inside a reactor
+                       manages its modules at the reactor's own version. -->
+                  <banDynamicVersions>
+                    <allowSnapshots>true</allowSnapshots>
+                  </banDynamicVersions>
+                  <banDuplicatePomDependencyVersions/>
+                  <requireNoRepositories/>
+                  <requirePluginVersions/>
+                  <requireProfileIdsExist/>
+                </rules>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+
+        <!-- The same ruleset as in ../pom.xml, so versions:update-properties in a
+             BOM skips pre-releases there too. -->
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>versions-maven-plugin</artifactId>
+          <version>${versions-maven-plugin.version}</version>
+          <configuration>
+            <ruleSet>
+              <ignoreVersions>
+                <ignoreVersion>
+                  <type>regex</type>
+                  <version>(?i).*[.\-_](alpha|beta|rc|cr|m|milestone|preview|pre|ea|early|dev|snapshot|incubating|next|canary|nightly)([.\-_]?\d+)?(-.*)?</version>
+                </ignoreVersion>
+                <ignoreVersion>
+                  <type>regex</type>
+                  <version>(?i).*\d(alpha|beta|rc|cr|m)\d+</version>
+                </ignoreVersion>
+                <ignoreVersion>
+                  <type>regex</type>
+                  <version>(?i).*[.\-_]b\d+</version>
+                </ignoreVersion>
+                <ignoreVersion>
+                  <type>regex</type>
+                  <version>(?i).*[.\-_]v?\d{8}(\d{4})?</version>
+                </ignoreVersion>
+                <ignoreVersion>
+                  <type>regex</type>
+                  <version>(?i).*[.\-_](android|jre\d+|jdk\d+)</version>
+                </ignoreVersion>
+              </ignoreVersions>
+            </ruleSet>
+            <generateBackupPoms>false</generateBackupPoms>
+            <allowSnapshots>false</allowSnapshots>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.sonatype.central</groupId>
+          <artifactId>central-publishing-maven-plugin</artifactId>
+          <version>${central-publishing-maven-plugin.version}</version>
+          <extensions>true</extensions>
+          <configuration>
+            <publishingServerId>central</publishingServerId>
+            <autoPublish>false</autoPublish>
+            <waitUntil>validated</waitUntil>
+          </configuration>
+        </plugin>
+
+      </plugins>
+    </pluginManagement>
+  </build>
+
+  <profiles>
+    <!-- mvn -Prelease deploy. The id matches the parent's release profile, so a
+         reactor that holds both a parent-inheriting root and a BOM built on this
+         POM activates both with the one -Prelease. No sources or javadoc: a BOM
+         has neither, and Central does not require them for pom packaging. -->
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>enforce-release-version</id>
+                <phase>validate</phase>
+                <goals>
+                  <goal>enforce</goal>
+                </goals>
+                <configuration>
+                  <rules>
+                    <requireReleaseVersion/>
+                  </rules>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
+</project>

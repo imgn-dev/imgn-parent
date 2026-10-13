@@ -39,9 +39,14 @@ jobs:
       - name: Build and verify the parent
         run: ./mvnw -B --no-transfer-progress clean install
 
-      # bom/ is deliberately not a <module> of the parent: modules are inherited,
-      # so every external child would try to build a bom/ of its own. It is a
-      # second invocation instead, and it must come after the parent is installed.
+      # bom-parent/ and bom/ are deliberately not <module>s of the parent:
+      # modules are inherited, so every external child would try to build them
+      # too. They are separate invocations instead. The BOM inherits bom-parent,
+      # so bom-parent is installed first; the BOM's integration tests also
+      # inherit the parent, so the parent is installed before both.
+      - name: Build and verify the BOM parent
+        run: ./mvnw -B --no-transfer-progress -f bom-parent/pom.xml clean install
+
       - name: Build and verify the BOM
         run: ./mvnw -B --no-transfer-progress -f bom/pom.xml clean install
 

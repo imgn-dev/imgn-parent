@@ -6,18 +6,20 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-  <!-- Inherits the parent purely to avoid restating the licence, the SCM block,
-       the developer list and the signing and publishing setup. Nothing about
-       that inheritance reaches a consumer: an <import> takes this POM's
-       dependencyManagement and nothing else, never a <build> section. The
-       parent deliberately does NOT list this directory in <modules> — modules
-       are inherited, so every external child would try to build a bom/ of its
-       own. This is built as a second, separate invocation instead. -->
+  <!-- Inherits bom-parent, NOT be.imgn.parent:parent. An <import> takes this
+       POM's effective dependencyManagement, inherited entries included, so
+       inheriting the parent would hand every importer the parent's JUnit,
+       AssertJ, ArchUnit, JSpecify and error_prone versions as well. bom-parent
+       brings the plugin versions, signing and publishing setup and manages no
+       dependencies at all. src/it/import-does-not-leak holds that line.
+
+       Neither POM lists this directory in <modules>; each is built as a
+       separate invocation, bom-parent first. -->
   <parent>
     <groupId>be.imgn.parent</groupId>
-    <artifactId>parent</artifactId>
+    <artifactId>bom-parent</artifactId>
     <version>2026-11-SNAPSHOT</version>
-    <relativePath>../pom.xml</relativePath>
+    <relativePath>../bom-parent/pom.xml</relativePath>
   </parent>
 
   <!-- groupId and version are inherited by Maven, but restated here anyway, and
@@ -84,13 +86,14 @@
          the fix belongs in the consuming module because it collides with
          JaCoCo. -->
     <mockito.version>5.24.0</mockito.version>
-    <!-- No antlr4.version here on purpose. The runtime managed below and the
-         antlr4-maven-plugin in the parent's pluginManagement are a matched
+    <!-- Must equal antlr4.version in ../pom.xml. The runtime managed below and
+         the antlr4-maven-plugin in the parent's pluginManagement are a matched
          pair, and a runtime that disagrees with the plugin that generated the
-         parser fails when the parser RUNS, not when it is built — a malfunction
-         rather than a build error. Rather than guard against the two numbers
-         drifting, there is only one number: ${antlr4.version} is defined in the
-         parent and inherited here. -->
+         parser fails when the parser RUNS, not when it is built. The number
+         used to be inherited from the parent, but this POM no longer inherits
+         it, so src/it/managed-library-versions fails the build if the two
+         drift apart instead. -->
+    <antlr4.version>4.13.2</antlr4.version>
   </properties>
 
   <dependencyManagement>

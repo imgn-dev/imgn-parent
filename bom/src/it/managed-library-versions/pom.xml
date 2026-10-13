@@ -105,6 +105,11 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <argLine>-javaagent:${org.mockito:mockito-core:jar}</argLine>
+          <!-- The parent's antlr4.version, which pins antlr4-maven-plugin.
+               AntlrVersionTest compares it with the runtime the BOM manages. -->
+          <systemPropertyVariables>
+            <parent.antlr4.version>${antlr4.version}</parent.antlr4.version>
+          </systemPropertyVariables>
         </configuration>
       </plugin>
     </plugins>

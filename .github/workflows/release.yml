@@ -68,17 +68,19 @@ jobs:
       # the release. Both are set explicitly instead.
       # ORDER MATTERS, and getting it wrong fails only on a clean machine.
       #
-      # The BOM restates its own version AND its parent's, because Central's
-      # validator reads each deployed .pom standalone and never resolves the
-      # parent. So four strings move, and every `-f bom/pom.xml` invocation has
-      # to build the BOM's model first, which means resolving its parent.
+      # The BOM restates its own version AND its parent's (bom-parent), because
+      # Central's validator reads each deployed .pom standalone and never
+      # resolves the parent. So five strings move, and every `-f bom/pom.xml`
+      # invocation has to build the BOM's model first, which means resolving
+      # bom-parent.
       #
       # Bump the BOM FIRST, while bom/pom.xml still names the version that
-      # pom.xml on disk still has, so relativePath resolves it. Touch the parent
-      # first and the two disagree: Maven reports "parent.relativePath points at
-      # wrong local POM", falls back to the repository, and looks for a SNAPSHOT
-      # that was never published. A developer machine has it cached and succeeds;
-      # a fresh runner does not and the release dies here.
+      # bom-parent/pom.xml on disk still has, so relativePath resolves it. Touch
+      # bom-parent first and the two disagree: Maven reports "parent.relativePath
+      # points at wrong local POM", falls back to the repository, and looks for a
+      # SNAPSHOT that was never published. A developer machine has it cached and
+      # succeeds; a fresh runner does not and the release dies here. The parent
+      # is independent of both.
       - name: Set release version
         run: |
           ./mvnw -B --no-transfer-progress -f bom/pom.xml versions:set \
@@ -88,17 +90,21 @@ jobs:
           ./mvnw -B --no-transfer-progress -f bom/pom.xml versions:update-parent \
             -DparentVersion='${{ inputs.releaseVersion }}' \
             -DskipResolution=true -DgenerateBackupPoms=false
+          ./mvnw -B --no-transfer-progress -f bom-parent/pom.xml versions:set \
+            -DnewVersion='${{ inputs.releaseVersion }}' -DgenerateBackupPoms=false
           ./mvnw -B --no-transfer-progress versions:set \
             -DnewVersion='${{ inputs.releaseVersion }}' -DgenerateBackupPoms=false
           ./mvnw -B --no-transfer-progress versions:set-property \
             -Dproperty=imgn.config.version \
             -DnewVersion='${{ inputs.releaseVersion }}' -DgenerateBackupPoms=false
 
-      # install, not verify: the BOM is a separate build that resolves the parent
-      # from the local repository.
+      # install, not verify: the BOM is a separate build that resolves
+      # bom-parent, and its integration tests the parent, from the local
+      # repository.
       - name: Verify
         run: |
           ./mvnw -B --no-transfer-progress clean install
+          ./mvnw -B --no-transfer-progress -f bom-parent/pom.xml clean install
           ./mvnw -B --no-transfer-progress -f bom/pom.xml clean install
 
       - name: Publish to Maven Central
@@ -116,11 +122,12 @@ jobs:
         # their own, which fails. Nothing is lost — this step publishes, it does
         # not test.
         #
-        # Two deployments, parent then BOM. They are separate builds because the
-        # parent cannot aggregate the BOM: <modules> is inherited, so every
-        # external child would try to build a bom/ of its own.
+        # Three deployments: parent, bom-parent, BOM. They are separate builds
+        # because the parent cannot aggregate the others: <modules> is
+        # inherited, so every external child would try to build them too.
         run: |
           ./mvnw -B --no-transfer-progress -Prelease -DskipTests -Dinvoker.skip=true deploy
+          ./mvnw -B --no-transfer-progress -f bom-parent/pom.xml -Prelease -DskipTests -Dinvoker.skip=true deploy
           ./mvnw -B --no-transfer-progress -f bom/pom.xml -Prelease -DskipTests -Dinvoker.skip=true deploy
 
       - name: Tag the release
@@ -143,6 +150,8 @@ jobs:
             -DnewVersion="$next" -DgenerateBackupPoms=false
           ./mvnw -B --no-transfer-progress -f bom/pom.xml versions:update-parent \
             -DparentVersion="$next" -DskipResolution=true -DgenerateBackupPoms=false
+          ./mvnw -B --no-transfer-progress -f bom-parent/pom.xml versions:set \
+            -DnewVersion="$next" -DgenerateBackupPoms=false
           ./mvnw -B --no-transfer-progress versions:set \
             -DnewVersion="$next" -DgenerateBackupPoms=false
           ./mvnw -B --no-transfer-progress versions:set-property \
