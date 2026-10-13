@@ -258,11 +258,6 @@ Every child gets these without declaring anything:
 | `validate` | Checkstyle | Enforces the shared ruleset |
 | `compile` | Error Prone + NullAway | Static analysis and null-safety, as compile errors |
 
-`reactorModuleConvergence` has two consequences worth knowing before they
-surprise you. A reactor module whose parent is not the reactor root fails the
-rule, so a parentless or externally-parented BOM module cannot stay in the
-aggregator. And `mvn -pl <module>` fails unless you also pass `-am`.
-
 Spotless is declared before Checkstyle on purpose: both bind to `validate`, and
 Maven runs plugins in declaration order within a phase, so code is formatted
 before it is checked.
@@ -349,10 +344,12 @@ Shipping a release that depends on a snapshot is the real hazard, and
 `requireReleaseDeps` / `requireReleaseVersion` catch it under `-PperformRelease`,
 which is the only moment it matters.
 
-Two more consequences of `reactorModuleConvergence`, both surprising the first
-time: every reactor module's parent must be the reactor root, so a standalone
-BOM module has to be folded into the root POM; and `mvn -pl <module>` fails
-unless `-am` is passed.
+`reactorModuleConvergence` is deliberately absent. It requires every reactor
+module's parent to be the reactor root, which rules out a BOM module that does
+not inherit this parent, the layout a project publishing a BOM needs. Under
+CI-friendly `${revision}` every inheriting module shares one version anyway,
+and `dependencyConvergence` and `requireUpperBoundDeps` still catch real
+convergence problems.
 
 ## Layout belongs to the formatter
 

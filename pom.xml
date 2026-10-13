@@ -516,7 +516,6 @@
                   </bannedDependencies>
                   <dependencyConvergence/>
                   <requireUpperBoundDeps/>
-                  <reactorModuleConvergence/>
                   <!-- A released POM must resolve from the configured mirrors
                        alone, never from a repository it declares itself. -->
                   <requireNoRepositories/>
