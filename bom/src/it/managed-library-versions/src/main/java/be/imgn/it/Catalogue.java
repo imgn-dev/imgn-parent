@@ -1,6 +1,5 @@
 package be.imgn.it;
 
-import com.palantir.javapoet.TypeSpec;
 import dev.dirs.ProjectDirectories;
 import org.antlr.v4.runtime.CharStreams;
 import org.jdbi.v3.core.Jdbi;
@@ -20,7 +19,6 @@ public final class Catalogue {
         return JsonMapper.builder().build().getClass().getName()
                 + " " + CharStreams.fromString("grammar").getSourceName()
                 + " " + Jdbi.class.getName()
-                + " " + ProjectDirectories.from("be", "imgn", "it").dataDir
-                + " " + TypeSpec.classBuilder("Generated").build().name();
+                + " " + ProjectDirectories.from("be", "imgn", "it").dataDir;
     }
 }

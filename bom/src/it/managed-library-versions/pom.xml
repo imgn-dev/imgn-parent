@@ -51,10 +51,6 @@
       <artifactId>directories</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.palantir.javapoet</groupId>
-      <artifactId>javapoet</artifactId>
-    </dependency>
-    <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
       <scope>test</scope>

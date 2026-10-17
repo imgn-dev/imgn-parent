@@ -107,15 +107,9 @@ gates, and the few versions those gates depend on:
 | JSON | `jackson-bom` (Jackson 3, `tools.jackson`) |
 | Database | `jdbi3-bom`, `h2` |
 | Parsing | `antlr4-runtime` |
-| Codegen | `javapoet` (Palantir's fork, `com.palantir.javapoet`) |
 | Mocking | `mockito-bom` — [needs a Java agent](#mockito-needs-a-java-agent) |
 | Logging | `slf4j-bom` |
 | Platform | `directories` |
-
-JavaPoet is Palantir's fork. The original `com.squareup:javapoet` is
-unmaintained and knows nothing about records or sealed types; the coordinates
-are different, so both can be on a classpath at once — check which one an
-import actually refers to.
 
 Then declare what you use **without a `<version>`**. Nothing is on a classpath
 until you declare it: managing a version is not a recommendation to use the
