@@ -23,7 +23,7 @@
        invocation, like bom/. -->
   <groupId>be.imgn.parent</groupId>
   <artifactId>bom-parent</artifactId>
-  <version>2026-10-17</version>
+  <version>2026-11-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>BOM parent</name>
@@ -35,7 +35,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <!-- Reproducible builds: bump on each release. -->
-    <project.build.outputTimestamp>2026-10-17T18:56:31Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-10-17T18:59:11Z</project.build.outputTimestamp>
 
     <minimum.maven.version>3.9.16</minimum.maven.version>
 
