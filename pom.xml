@@ -18,6 +18,19 @@
   <url>https://github.com/imgn-dev/imgn-parent</url>
   <inceptionYear>2026</inceptionYear>
 
+  <!-- One reactor, so a release is ONE Central deployment instead of three:
+       central-publishing-maven-plugin stages every module and uploads a single
+       bundle from the last one. Central's monthly limit counts deployments.
+
+       Aggregation is not inheritance. <modules> never reaches a child's
+       effective POM, so a project inheriting this one builds only itself, and
+       neither module inherits anything from here: bom-parent has no parent,
+       and the BOM inherits bom-parent. -->
+  <modules>
+    <module>bom-parent</module>
+    <module>bom</module>
+  </modules>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

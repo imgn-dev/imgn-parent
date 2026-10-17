@@ -19,8 +19,9 @@
        Anything added there reaches every project that imports a BOM built on
        this one.
 
-       No <parent> either, for the same reason, and it is built as its own
-       invocation, like bom/. -->
+       No <parent> either, for the same reason. ../pom.xml lists it as a
+       <module>, which aggregates it into the same build without making it a
+       child. -->
   <groupId>be.imgn.parent</groupId>
   <artifactId>bom-parent</artifactId>
   <version>2026-11-SNAPSHOT</version>

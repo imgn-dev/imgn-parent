@@ -32,23 +32,13 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: maven
 
-      # verify runs the invoker integration tests under src/it, which are the
-      # only thing proving the quality gates still enforce. install rather than
-      # verify because the BOM below is a separate build that resolves this POM
-      # from the local repository.
-      - name: Build and verify the parent
+      # One reactor: the parent, bom-parent and the BOM. verify runs the invoker
+      # integration tests under src/it and bom/src/it, which are the only thing
+      # proving the quality gates still enforce. install rather than verify
+      # because those tests resolve the POMs being built from the local
+      # repository.
+      - name: Build and verify
         run: ./mvnw -B --no-transfer-progress clean install
-
-      # bom-parent/ and bom/ are deliberately not <module>s of the parent:
-      # modules are inherited, so every external child would try to build them
-      # too. They are separate invocations instead. The BOM inherits bom-parent,
-      # so bom-parent is installed first; the BOM's integration tests also
-      # inherit the parent, so the parent is installed before both.
-      - name: Build and verify the BOM parent
-        run: ./mvnw -B --no-transfer-progress -f bom-parent/pom.xml clean install
-
-      - name: Build and verify the BOM
-        run: ./mvnw -B --no-transfer-progress -f bom/pom.xml clean install
 
       - name: Upload integration test logs
         if: failure()

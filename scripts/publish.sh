@@ -2,16 +2,14 @@
 #
 # Walks through publishing be.imgn.parent to Maven Central.
 #
-# Three artifacts go out, built as three separate Maven invocations because the
-# parent cannot aggregate the others (<modules> is inherited, so every external
-# child would try to build them too):
+# Three artifacts go out, built as one reactor (the parent aggregates the other
+# two without being their parent):
 #
 #   be.imgn.parent:parent       the parent POM, plus its classified config jar
 #   be.imgn.parent:bom-parent   the BOM's parent: build and publishing setup only
 #   be.imgn.parent:bom          the library version catalogue
 #
-# They arrive in the portal as THREE deployments. All must be published, or a
-# project that inherits the parent and imports the BOM gets part of a release.
+# They arrive in the portal as ONE deployment, so they are published together.
 #
 # Safe to re-run: every step detects what is already done and skips it. Nothing
 # becomes public until you press Publish in the Central portal, which this
@@ -328,13 +326,10 @@ run_release() {
     if gh run watch "$id" --repo "$REPO" --exit-status --interval 15; then
         bold 'Published to the staging area'
         info "Open $PORTAL"
-        info 'Expect THREE deployments, not one:'
+        info 'Expect ONE deployment holding three components:'
         info "  be.imgn.parent:parent:$RELEASE_VERSION       pom, config jar"
         info "  be.imgn.parent:bom-parent:$RELEASE_VERSION   pom only"
         info "  be.imgn.parent:bom:$RELEASE_VERSION          pom only"
-        info 'Publish all three. Releasing only the parent leaves every project'
-        info 'that imports the BOM unable to resolve its library versions, and the'
-        info 'BOM cannot be resolved without bom-parent.'
         info 'Inspect the uploaded files first — that button is the point of no return.'
     else
         die "Run $id failed. Inspect it with: gh run view $id --repo $REPO --log-failed"

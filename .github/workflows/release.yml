@@ -80,7 +80,8 @@ jobs:
       # points at wrong local POM", falls back to the repository, and looks for a
       # SNAPSHOT that was never published. A developer machine has it cached and
       # succeeds; a fresh runner does not and the release dies here. The parent
-      # is independent of both.
+      # goes LAST: a command at the root loads all three modules, and they only
+      # agree again once the other two are bumped.
       - name: Set release version
         run: |
           ./mvnw -B --no-transfer-progress -f bom/pom.xml versions:set \
@@ -98,14 +99,10 @@ jobs:
             -Dproperty=imgn.config.version \
             -DnewVersion='${{ inputs.releaseVersion }}' -DgenerateBackupPoms=false
 
-      # install, not verify: the BOM is a separate build that resolves
-      # bom-parent, and its integration tests the parent, from the local
-      # repository.
+      # install, not verify: the integration tests resolve the POMs being
+      # built from the local repository.
       - name: Verify
-        run: |
-          ./mvnw -B --no-transfer-progress clean install
-          ./mvnw -B --no-transfer-progress -f bom-parent/pom.xml clean install
-          ./mvnw -B --no-transfer-progress -f bom/pom.xml clean install
+        run: ./mvnw -B --no-transfer-progress clean install
 
       - name: Publish to Maven Central
         env:
@@ -122,13 +119,10 @@ jobs:
         # their own, which fails. Nothing is lost — this step publishes, it does
         # not test.
         #
-        # Three deployments: parent, bom-parent, BOM. They are separate builds
-        # because the parent cannot aggregate the others: <modules> is
-        # inherited, so every external child would try to build them too.
-        run: |
-          ./mvnw -B --no-transfer-progress -Prelease -DskipTests -Dinvoker.skip=true deploy
-          ./mvnw -B --no-transfer-progress -f bom-parent/pom.xml -Prelease -DskipTests -Dinvoker.skip=true deploy
-          ./mvnw -B --no-transfer-progress -f bom/pom.xml -Prelease -DskipTests -Dinvoker.skip=true deploy
+        # ONE deployment for all three POMs: the plugin stages every module of
+        # the reactor and uploads a single bundle from the last one. Central's
+        # monthly limit counts deployments, so this must stay one build.
+        run: ./mvnw -B --no-transfer-progress -Prelease -DskipTests -Dinvoker.skip=true deploy
 
       - name: Tag the release
         # The POM may already sit at the version being released, in which case

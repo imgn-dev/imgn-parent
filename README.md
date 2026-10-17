@@ -213,17 +213,20 @@ through the code under test.
 `bom/src/it/managed-library-versions` runs this exact configuration, so the
 recipe is tested rather than merely described.
 
-### Why `bom/` is not a `<module>`
+### Why `bom/` and `bom-parent/` are modules
 
-`<modules>` is inherited. If this POM aggregated `bom/` and `bom-parent/`, every
-external child would inherit that list and try to build those directories of
-its own. So the three are separate Maven invocations, in this order:
+The parent lists both in `<modules>`, so `./mvnw clean install` builds all
+three POMs in one reactor, and a release is one Central deployment rather than
+three. Central's monthly publishing limit counts deployments.
 
-```
-./mvnw clean install
-./mvnw -f bom-parent/pom.xml clean install
-./mvnw -f bom/pom.xml clean install
-```
+Aggregation is not inheritance. `<modules>` never reaches a child's effective
+POM, so a project inheriting the parent builds only itself; and neither module
+inherits anything from the parent.
+
+The reactor order is `bom-parent`, the parent, the BOM. The BOM's
+`managed-library-versions` integration test inherits the parent, so the BOM's
+invoker plugin declares a dependency on the parent's POM: it is never put on a
+classpath, but it is what tells Maven to build the parent first.
 
 **The BOM inherits `bom-parent`, never the parent.** An `<import>` takes the
 imported POM's *effective* `dependencyManagement`, inherited entries included.
@@ -618,9 +621,9 @@ mvn versions:display-plugin-updates
 mvn versions:display-property-updates
 ```
 
-Run them again with `-f bom-parent/pom.xml` and `-f bom/pom.xml`: neither is a
-module, and `bom-parent` repeats the parent's plugin versions, which must be
-bumped together.
+They report on `bom-parent` and the BOM too, since both are modules.
+`bom-parent` repeats the parent's plugin versions, which must be bumped
+together.
 
 Error Prone, NullAway and Palantir Java Format are invisible to those goals —
 the first two live in `annotationProcessorPaths`, the third is inline in the
@@ -642,12 +645,11 @@ Manual, via the **Release** workflow in GitHub Actions. It takes the release
 version and the next development version, then sets both, verifies, publishes,
 tags and pushes.
 
-**Three artifacts go out, so there are three of everything.** The workflow
-deploys the parent, `bom-parent` and the BOM as separate invocations, and they
-arrive in the Central portal as **three deployments**. All three must be
-published. Releasing only the parent leaves every project that imports the BOM
-unable to resolve its library versions, and the BOM is unresolvable without
-`bom-parent`.
+**Three artifacts go out in one deployment.** The workflow deploys the
+reactor once; central-publishing-maven-plugin stages the parent, `bom-parent`
+and the BOM, and uploads a single bundle from the last module. They are
+published together or not at all, so a project can never get the parent without
+the BOM it imports, or the BOM without `bom-parent`.
 
 **The version bump does the BOM first, and that order is load-bearing.** Five
 strings move: the parent's version and `imgn.config.version`, `bom-parent`'s
@@ -657,14 +659,14 @@ version, and the BOM's own version and its parent reference. Every
 disagree, so Maven reports *"parent
 .relativePath points at wrong local POM"*, falls back to the repository, and
 looks for a SNAPSHOT that was never published. A developer machine has it cached
-and succeeds; a clean runner does not, and the release dies at that step.
+and succeeds; a clean runner does not, and the release dies at that step. The
+parent comes last: a command at the root loads all three modules, and they only
+agree again once the other two are done.
 
 Locally the equivalent is:
 
 ```bash
 ./mvnw -Prelease deploy
-./mvnw -f bom-parent/pom.xml -Prelease deploy
-./mvnw -f bom/pom.xml -Prelease deploy
 ```
 
 The `release` profile attaches sources and javadoc, signs with GPG, publishes

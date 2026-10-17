@@ -13,8 +13,8 @@
        brings the plugin versions, signing and publishing setup and manages no
        dependencies at all. src/it/import-does-not-leak holds that line.
 
-       Neither POM lists this directory in <modules>; each is built as a
-       separate invocation, bom-parent first. -->
+       It is a <module> of ../pom.xml, which aggregates it without being its
+       parent, so the three POMs build and deploy as one reactor. -->
   <parent>
     <groupId>be.imgn.parent</groupId>
     <artifactId>bom-parent</artifactId>
@@ -161,6 +161,18 @@
           <showErrors>true</showErrors>
           <streamLogs>false</streamLogs>
         </configuration>
+        <!-- Not for the classpath: a plugin dependency on a reactor module is
+             what makes Maven build that module first. managed-library-versions
+             inherits the parent, so the parent must be installed before these
+             tests run, and nothing else ties the BOM to it. -->
+        <dependencies>
+          <dependency>
+            <groupId>be.imgn.parent</groupId>
+            <artifactId>parent</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+          </dependency>
+        </dependencies>
         <executions>
           <execution>
             <id>integration-test</id>
