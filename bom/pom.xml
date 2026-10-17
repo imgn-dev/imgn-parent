@@ -18,7 +18,7 @@
   <parent>
     <groupId>be.imgn.parent</groupId>
     <artifactId>bom-parent</artifactId>
-    <version>2026-11-SNAPSHOT</version>
+    <version>2026-10-17</version>
     <relativePath>../bom-parent/pom.xml</relativePath>
   </parent>
 
@@ -36,7 +36,7 @@
        required by Central. -->
   <groupId>be.imgn.parent</groupId>
   <artifactId>bom</artifactId>
-  <version>2026-11-SNAPSHOT</version>
+  <version>2026-10-17</version>
   <packaging>pom</packaging>
 
   <name>BOM</name>
