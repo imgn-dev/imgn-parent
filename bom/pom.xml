@@ -72,7 +72,7 @@
          this BOM cannot: import takes the resolved versions, and its own
          properties do not override them. That difference is the whole reason
          both artifacts exist. -->
-    <jackson.version>3.2.3</jackson.version>
+    <jackson.version>3.2.4</jackson.version>
     <jdbi.version>3.55.0</jdbi.version>
     <slf4j.version>2.0.20</slf4j.version>
     <h2.version>2.5.252</h2.version>

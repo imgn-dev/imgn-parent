@@ -25,7 +25,7 @@ be able to take *without* taking the build configuration. See
 ```
 
 Builds go through the wrapper, never a locally installed `mvn`, so everyone runs
-the same Maven. It is pinned to the latest stable release, `3.9.16` — the same
+the same Maven. It is pinned to the latest stable release, `3.10.0` — the same
 value as the enforcer floor `${minimum.maven.version}`, so the pinned Maven can
 never be older than the minimum the build demands.
 
@@ -635,9 +635,6 @@ Spotless configuration. Check them against Maven Central directly.
 request, against JDK 25 and the newest JDK. Both are built because Error Prone
 reflects into javac internals and is the first thing to break on a new release.
 Integration test logs are uploaded when a build fails.
-
-`.github/dependabot.yml` opens weekly PRs for Maven dependencies and Actions, so
-upgrades arrive continuously rather than in bulk.
 
 ## Releasing
 
