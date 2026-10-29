@@ -352,6 +352,24 @@ Same purpose as `errorprone.extra.args`: a child never has to override the
 javadoc configuration, which would discard `doclint`, `failOnWarnings` and the
 release wiring with it.
 
+## Exempting fields from VisibilityModifier
+
+Checkstyle's `VisibilityModifier` requires private fields, except those carrying
+`@TempDir`, `@RegisterExtension`, `@Rule`, `@ClassRule` or `@VisibleForTesting`.
+A project whose generated code or framework must reach a field adds its own
+annotations through `checkstyle.visibility.ignoredAnnotations`, comma-separated
+canonical names:
+
+```xml
+<properties>
+  <checkstyle.visibility.ignoredAnnotations>com.example.Exposed</checkstyle.visibility.ignoredAnnotations>
+</properties>
+```
+
+They are added to the list above, not substituted for it. The ruleset falls back
+to that list when the property is undefined, as in an IDE pointed at the
+unpacked file.
+
 ## Suppressing a Checkstyle rule at one site
 
 `@SuppressWarnings("checkstyle:CyclomaticComplexity")` works on any element, for
@@ -406,12 +424,14 @@ palantir emits is the house style.
 | `errorprone-extra-args` | builds green — a custom inline Javadoc tag, with the check switched off |
 | `checkstyle-suppresswarnings` | builds green — a 16-arm switch, complexity suppressed by annotation |
 | `visibilitymodifier-junit-fields` | builds green — package-private `@TempDir` and `@RegisterExtension` fields |
+| `visibilitymodifier-ignored-annotations` | builds green — a package-private field exempted through the property |
 | `snapshot-sibling` | builds green — a reactor module depending on its `-SNAPSHOT` sibling |
 | `javadoc-extra-args` | builds green — a custom block tag registered through the property |
 | `checkstyle-violation` | **fails** — magic number |
 | `nullaway-violation` | **fails** — null passed where non-null required |
 | `errorprone-extra-args-absent` | **fails** — same sources, without the property |
 | `checkstyle-suppresswarnings-absent` | **fails** — same switch, without the annotation |
+| `visibilitymodifier-ignored-annotations-absent` | **fails** — same field, without the property |
 
 | `javadoc-extra-args-absent` | **fails** — same tag, without the property |
 

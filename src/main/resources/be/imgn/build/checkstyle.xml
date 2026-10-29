@@ -62,7 +62,12 @@
     <!-- ignoreAnnotationCanonicalNames replaces the default rather than adding to
          it, so the three defaults are repeated here. JUnit 5 rejects a private
          @TempDir or @RegisterExtension field, so the rule and the framework
-         contradict each other unless those are exempt. -->
+         contradict each other unless those are exempt.
+
+         A project adds its own annotations, comma-separated canonical names,
+         through the Maven property checkstyle.visibility.ignoredAnnotations.
+         The default covers a run that does not define it, such as an IDE
+         pointed at the unpacked file. -->
     <module name="VisibilityModifier">
       <property name="protectedAllowed" value="false"/>
       <property name="allowPublicFinalFields" value="false"/>
@@ -71,7 +76,13 @@
                        org.junit.ClassRule,
                        com.google.common.annotations.VisibleForTesting,
                        org.junit.jupiter.api.io.TempDir,
-                       org.junit.jupiter.api.extension.RegisterExtension"/>
+                       org.junit.jupiter.api.extension.RegisterExtension,
+                       ${checkstyle.visibility.ignoredAnnotations}"
+                default="org.junit.Rule,
+                         org.junit.ClassRule,
+                         com.google.common.annotations.VisibleForTesting,
+                         org.junit.jupiter.api.io.TempDir,
+                         org.junit.jupiter.api.extension.RegisterExtension"/>
     </module>
     <module name="MutableException"/>
 

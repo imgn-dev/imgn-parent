@@ -70,6 +70,11 @@
          single main method can instead use @SuppressWarnings("SystemOut"). -->
     <errorprone.systemout.severity>ERROR</errorprone.systemout.severity>
 
+    <!-- Annotations whose fields Checkstyle's VisibilityModifier exempts, on top
+         of the JUnit ones the ruleset already lists: comma-separated canonical
+         names, for fields that generated code or a framework must reach. -->
+    <checkstyle.visibility.ignoredAnnotations></checkstyle.visibility.ignoredAnnotations>
+
     <!-- Version of this POM's own "config" jar, which carries the Checkstyle
          ruleset. It must equal <version> above, and ${project.version}
          cannot be used: in an inherited plugin dependency that expression resolves
@@ -581,6 +586,10 @@
           <configuration>
             <configLocation>be/imgn/build/checkstyle.xml</configLocation>
             <suppressionsLocation>be/imgn/build/checkstyle-suppressions.xml</suppressionsLocation>
+            <!-- The plugin hands Checkstyle no project properties of its own
+                 accord. Maven interpolates this line, so a child's value
+                 flows through. -->
+            <propertyExpansion>checkstyle.visibility.ignoredAnnotations=${checkstyle.visibility.ignoredAnnotations}</propertyExpansion>
             <includeTestSourceDirectory>true</includeTestSourceDirectory>
             <consoleOutput>true</consoleOutput>
             <failsOnError>true</failsOnError>
