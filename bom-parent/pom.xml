@@ -29,7 +29,7 @@
 
   <name>BOM parent</name>
   <description>Build and publishing setup for BOMs, with no managed dependencies.</description>
-  <url>https://github.com/imgn-dev/imgn-parent</url>
+  <url>https://github.com/imgn-dev/parent</url>
   <inceptionYear>2026</inceptionYear>
 
   <properties>
@@ -71,9 +71,9 @@
   <scm child.scm.connection.inherit.append.path="false"
        child.scm.developerConnection.inherit.append.path="false"
        child.scm.url.inherit.append.path="false">
-    <connection>scm:git:https://github.com/imgn-dev/imgn-parent.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/imgn-dev/imgn-parent.git</developerConnection>
-    <url>https://github.com/imgn-dev/imgn-parent</url>
+    <connection>scm:git:https://github.com/imgn-dev/parent.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/imgn-dev/parent.git</developerConnection>
+    <url>https://github.com/imgn-dev/parent</url>
     <tag>HEAD</tag>
   </scm>
 

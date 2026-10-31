@@ -41,7 +41,7 @@
 
   <name>BOM</name>
   <description>Shared library versions for all projects.</description>
-  <url>https://github.com/imgn-dev/imgn-parent</url>
+  <url>https://github.com/imgn-dev/parent</url>
   <inceptionYear>2026</inceptionYear>
 
   <licenses>
@@ -61,9 +61,9 @@
   </developers>
 
   <scm>
-    <connection>scm:git:https://github.com/imgn-dev/imgn-parent.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/imgn-dev/imgn-parent.git</developerConnection>
-    <url>https://github.com/imgn-dev/imgn-parent</url>
+    <connection>scm:git:https://github.com/imgn-dev/parent.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/imgn-dev/parent.git</developerConnection>
+    <url>https://github.com/imgn-dev/parent</url>
   </scm>
 
   <properties>

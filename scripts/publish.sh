@@ -41,7 +41,7 @@ if [ -t 0 ] && command -v tty >/dev/null 2>&1; then
     export GPG_TTY
 fi
 
-REPO='imgn-dev/imgn-parent'
+REPO='imgn-dev/parent'
 DOMAIN='imgn.be'
 NAMESPACE='be.imgn'
 KEYSERVER='keyserver.ubuntu.com'
