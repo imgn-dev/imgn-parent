@@ -98,10 +98,10 @@
     <antlr4.version>4.13.2</antlr4.version>
 
     <!-- Tool versions -->
-    <checkstyle.version>14.3.0</checkstyle.version>
+    <checkstyle.version>14.4.0</checkstyle.version>
     <errorprone.version>2.51.0</errorprone.version>
-    <nullaway.version>0.14.2</nullaway.version>
-    <palantir-java-format.version>2.102.0</palantir-java-format.version>
+    <nullaway.version>0.14.3</nullaway.version>
+    <palantir-java-format.version>2.103.0</palantir-java-format.version>
 
     <!-- Plugin versions -->
     <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
@@ -115,7 +115,7 @@
     <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
     <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
     <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
-    <maven-enforcer-plugin.version>3.6.3</maven-enforcer-plugin.version>
+    <maven-enforcer-plugin.version>3.7.0</maven-enforcer-plugin.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <maven-site-plugin.version>3.22.0</maven-site-plugin.version>
     <maven-dependency-plugin.version>3.11.0</maven-dependency-plugin.version>
